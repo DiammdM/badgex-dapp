@@ -37,9 +37,6 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
           </nav>
           <div className="flex items-center gap-3">
             <LanguageSwitch />
-            <span className="hidden rounded-full border border-slate-900/10 bg-white/80 px-3 py-1 text-xs font-semibold text-slate-600 md:inline-flex">
-              {copy.network}
-            </span>
             <button
               className="rounded-full border border-slate-900/20 bg-slate-900 px-5 py-2 text-sm font-semibold text-amber-50 shadow-sm transition hover:-translate-y-0.5 hover:bg-slate-800"
               type="button"
