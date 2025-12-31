@@ -4,12 +4,15 @@
   "private": true,
   "scripts": {
     "dev": "npm run kill && next dev",
+    "dev:inspect": "NODE_OPTIONS=\"--inspect\" next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "kill": "npx kill-port 3000"
+    "kill": "npx kill-port 3000",
+    "link": "pnpm link --global @badgex/contracts"
   },
   "dependencies": {
+    "@badgex/contracts": "link:../badgex-contract",
     "@prisma/client": "6.16.2",
     "@resvg/resvg-js": "^2.6.2",
     "@resvg/resvg-js-darwin-arm64": "^2.6.2",

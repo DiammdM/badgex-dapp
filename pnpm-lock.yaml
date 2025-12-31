@@ -4,10 +4,16 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+overrides:
+  '@badgex/contracts': link:../badgex-contract
+
 importers:
 
   .:
     dependencies:
+      '@badgex/contracts':
+        specifier: link:../badgex-contract
+        version: link:../badgex-contract
       '@prisma/client':
         specifier: 6.16.2
         version: 6.16.2(prisma@6.16.2(typescript@5.9.3))(typescript@5.9.3)
