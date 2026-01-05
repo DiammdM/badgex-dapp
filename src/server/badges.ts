@@ -1,5 +1,12 @@
+"server only";
+
 import { prisma } from "@/lib/prisma";
-import { BadgeConfig, BadgeListItem, CreateBadgeInput, Metadata } from "./type";
+import {
+  BadgeConfig,
+  BadgeListItem,
+  CreateBadgeInput,
+  Metadata,
+} from "@/types/badge";
 import { uploadBadgeImage, uploadBadgeMetadata } from "./ipfs";
 
 const IPFS_PIC_PREFIX = process.env.IPFS_PIC_PREFIX ?? "";

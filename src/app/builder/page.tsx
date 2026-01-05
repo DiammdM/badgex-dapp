@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Flame, Leaf, Star, Sun, Zap } from "lucide-react";
-import { useLanguage } from "../_components/LanguageProvider";
+import { useLanguage } from "@/components/LanguageProvider";
 import { builderContent } from "../i18n";
 
 const PREVIEW_SIZE = 512;
@@ -148,7 +148,7 @@ export default function BuilderPage() {
       level,
       selectedCategoryEnglish,
       selectedThemeEnglishLabel,
-    ],
+    ]
   );
 
   const metadataJson = JSON.stringify(metadataPreview, null, 2);
@@ -293,7 +293,9 @@ export default function BuilderPage() {
               </label>
               <select
                 className="mt-2 w-full rounded-2xl border border-slate-900/10 bg-white px-4 py-3 text-sm text-slate-800 focus:border-slate-900/40 focus:outline-none"
-                onChange={(event) => setCategoryIndex(Number(event.target.value))}
+                onChange={(event) =>
+                  setCategoryIndex(Number(event.target.value))
+                }
                 value={categoryIndex}
               >
                 {copy.categories.map((category, index) => (
@@ -444,7 +446,8 @@ export default function BuilderPage() {
             </div>
             <div
               className={`mt-6 flex items-center justify-center rounded-3xl bg-gradient-to-br p-6 ${
-                selectedTheme?.backdrop ?? "from-emerald-200 via-emerald-100 to-amber-100"
+                selectedTheme?.backdrop ??
+                "from-emerald-200 via-emerald-100 to-amber-100"
               }`}
             >
               <svg
@@ -467,7 +470,9 @@ export default function BuilderPage() {
                     cy={256}
                     fill="url(#badgeFill)"
                     r={200}
-                    stroke={selectedBorderWidth ? selectedTheme?.border : "none"}
+                    stroke={
+                      selectedBorderWidth ? selectedTheme?.border : "none"
+                    }
                     strokeWidth={selectedBorderWidth}
                   />
                 )}
@@ -475,7 +480,9 @@ export default function BuilderPage() {
                   <polygon
                     fill="url(#badgeFill)"
                     points={hexagonPoints}
-                    stroke={selectedBorderWidth ? selectedTheme?.border : "none"}
+                    stroke={
+                      selectedBorderWidth ? selectedTheme?.border : "none"
+                    }
                     strokeWidth={selectedBorderWidth}
                   />
                 )}
@@ -483,7 +490,9 @@ export default function BuilderPage() {
                   <path
                     d={shieldPath}
                     fill="url(#badgeFill)"
-                    stroke={selectedBorderWidth ? selectedTheme?.border : "none"}
+                    stroke={
+                      selectedBorderWidth ? selectedTheme?.border : "none"
+                    }
                     strokeWidth={selectedBorderWidth}
                   />
                 )}

@@ -19,6 +19,7 @@ export const layoutCopy = {
       market: "Market",
     },
     connect: "Connect Wallet",
+    wrongNetwork: "Wrong network",
     footerTitle: "Badgex Badge NFT Platform",
     footerTagline: "Badge - IPFS - Marketplace",
     footerLinks: {
@@ -36,6 +37,7 @@ export const layoutCopy = {
       market: "市场",
     },
     connect: "连接钱包",
+    wrongNetwork: "网络错误",
     footerTitle: "Badgex 徽章 NFT 平台",
     footerTagline: "徽章 - IPFS - 市场",
     footerLinks: {

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useLanguage } from "../_components/LanguageProvider";
+import { useLanguage } from "@/components/LanguageProvider";
 import { builderContent, myBadgesContent } from "../i18n";
 
 type BadgeStatus = "draft" | "saved" | "minted";
@@ -151,6 +151,28 @@ export default function MyBadgesPage() {
     const minted = badges.filter((badge) => badge.status === "MINTED").length;
     return { saved, minted };
   }, [badges]);
+
+  const mint = async (badge: BadgeListItem) => {
+    // check the login state
+    // TODO
+
+    // get the finger and signature
+    const response = await fetch("/api/mint-signature", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        to: "",
+        attributes: [],
+      }),
+    });
+    if (!response.ok) {
+      throw new Error("Failed to get mint signature");
+    }
+    const { signature, fingerprint } = await response.json();
+
+    // call the mint function on the contract
+    // TODO
+  };
 
   return (
     <div className="space-y-10">
@@ -303,16 +325,6 @@ export default function MyBadgesPage() {
                       {badge.updated}
                     </p>
                   </div>
-                  {badge.note ? (
-                    <div className="rounded-2xl border border-slate-900/10 bg-slate-50/80 p-3 sm:col-span-2">
-                      <p className="uppercase tracking-[0.28em]">
-                        {copy.cardLabels.status}
-                      </p>
-                      <p className="mt-1 text-sm font-semibold text-slate-900">
-                        {badge.note}
-                      </p>
-                    </div>
-                  ) : null}
                   {badge.tokenId ? (
                     <div className="rounded-2xl border border-slate-900/10 bg-slate-50/80 p-3 sm:col-span-2">
                       <p className="uppercase tracking-[0.28em]">
@@ -364,6 +376,9 @@ export default function MyBadgesPage() {
                     <button
                       className="rounded-full bg-amber-100 px-4 py-2 text-xs font-semibold text-amber-900"
                       type="button"
+                      onClick={() => {
+                        mint(badge);
+                      }}
                     >
                       {copy.actions.list}
                     </button>

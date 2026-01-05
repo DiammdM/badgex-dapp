@@ -9,29 +9,38 @@
     "start": "next start",
     "lint": "eslint",
     "kill": "npx kill-port 3000",
-    "link": "pnpm link --global @badgex/contracts"
+    "link": "pnpm link --global @badgex/contracts",
+    "script:test": "tsx src/scripts/Test.ts",
+    "wagmi:generate": "pnpm wagmi generate"
   },
   "dependencies": {
     "@badgex/contracts": "link:../badgex-contract",
     "@prisma/client": "6.16.2",
+    "@rainbow-me/rainbowkit": "^2.2.10",
     "@resvg/resvg-js": "^2.6.2",
     "@resvg/resvg-js-darwin-arm64": "^2.6.2",
+    "@tanstack/react-query": "^5.90.16",
+    "ethers": "6.16.0",
     "lucide-react": "^0.562.0",
     "next": "16.1.1",
     "pinata": "^2.5.2",
     "react": "19.2.3",
-    "react-dom": "19.2.3"
+    "react-dom": "19.2.3",
+    "viem": "^2.43.4",
+    "wagmi": "^3.1.4"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@wagmi/cli": "^2.8.0",
     "eslint": "^9",
     "eslint-config-next": "16.1.1",
     "kill-port": "2.0.1",
     "prisma": "6.16.2",
     "tailwindcss": "^4",
+    "tsx": "^4.21.0",
     "typescript": "^5"
   }
 }

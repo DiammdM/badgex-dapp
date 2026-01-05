@@ -1,6 +1,6 @@
 "use client";
 
-import { languages, type Language } from "../i18n";
+import { languages, type Language } from "../app/i18n";
 import { useLanguage } from "./LanguageProvider";
 
 const labels: Record<Language, string> = {

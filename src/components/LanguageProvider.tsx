@@ -1,13 +1,7 @@
 "use client";
 
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
-import { defaultLanguage, getLanguage, type Language } from "../i18n";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { defaultLanguage, getLanguage, type Language } from "@/app/i18n";
 
 const STORAGE_KEY = "badgex-language";
 
@@ -19,19 +13,12 @@ type LanguageContextValue = {
 
 const LanguageContext = createContext<LanguageContextValue | null>(null);
 
-export function LanguageProvider({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  const [language, setLanguageState] = useState<Language>(defaultLanguage);
-
-  useEffect(() => {
+export function LanguageProvider({ children }: { children: React.ReactNode }) {
+  const [language, setLanguageState] = useState<Language>(() => {
+    if (typeof window === "undefined") return defaultLanguage;
     const stored = window.localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      setLanguageState(getLanguage(stored));
-    }
-  }, []);
+    return stored ? getLanguage(stored) : defaultLanguage;
+  });
 
   useEffect(() => {
     window.localStorage.setItem(STORAGE_KEY, language);

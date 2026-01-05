@@ -36,5 +36,19 @@ export type Metadata = {
   name: string;
   description?: string;
   image: string;
-  attributes: { trait_type: string; value: string | number }[];
+  attributes: MetaAttribute[];
 };
+
+export type MetaAttribute = {
+  trait_type: BadgeTraitType;
+  value: string | number | boolean;
+};
+
+export type BadgeTraitType =
+  | "Level"
+  | "Category"
+  | "Theme"
+  | "Shape"
+  | "Border"
+  | "Icon"
+  | "Text";

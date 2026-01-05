@@ -1,4 +1,6 @@
-import { BadgeConfig, Metadata } from "./type";
+"server only";
+
+import { BadgeConfig, Metadata } from "@/types/badge";
 import { buildBadgeSvg } from "@/utils/badgeSvg";
 import { Resvg } from "@resvg/resvg-js";
 import { pinata } from "@/utils/pinata";

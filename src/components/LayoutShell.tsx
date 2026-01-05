@@ -1,11 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { useLanguage } from "./LanguageProvider";
-import { layoutCopy } from "../i18n";
+import { useLanguage } from "@/components/LanguageProvider";
+import { layoutCopy } from "../app/i18n";
 import LanguageSwitch from "./LanguageSwitch";
+import ConnectWalletButton from "@/components/ConnectWalletButton";
 
-export default function LayoutShell({ children }: { children: React.ReactNode }) {
+export default function LayoutShell({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const { language } = useLanguage();
   const copy = layoutCopy[language];
 
@@ -37,26 +42,37 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
           </nav>
           <div className="flex items-center gap-3">
             <LanguageSwitch />
-            <button
-              className="rounded-full border border-slate-900/20 bg-slate-900 px-5 py-2 text-sm font-semibold text-amber-50 shadow-sm transition hover:-translate-y-0.5 hover:bg-slate-800"
-              type="button"
-            >
-              {copy.connect}
-            </button>
+            <ConnectWalletButton
+              connectLabel={copy.connect}
+              wrongNetworkLabel={copy.wrongNetwork}
+              avatarUrl="/avatar-default.png"
+            />
           </div>
         </div>
         <div className="border-t border-slate-900/5 md:hidden">
           <nav className="mx-auto flex w-full max-w-6xl gap-4 overflow-x-auto px-6 py-3 text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
-            <Link className="whitespace-nowrap hover:text-slate-900" href="/builder">
+            <Link
+              className="whitespace-nowrap hover:text-slate-900"
+              href="/builder"
+            >
               {copy.nav.builder}
             </Link>
-            <Link className="whitespace-nowrap hover:text-slate-900" href="/my-badges">
+            <Link
+              className="whitespace-nowrap hover:text-slate-900"
+              href="/my-badges"
+            >
               {copy.nav.myBadges}
             </Link>
-            <Link className="whitespace-nowrap hover:text-slate-900" href="/badges">
+            <Link
+              className="whitespace-nowrap hover:text-slate-900"
+              href="/badges"
+            >
               {copy.nav.badges}
             </Link>
-            <Link className="whitespace-nowrap hover:text-slate-900" href="/market">
+            <Link
+              className="whitespace-nowrap hover:text-slate-900"
+              href="/market"
+            >
               {copy.nav.market}
             </Link>
           </nav>

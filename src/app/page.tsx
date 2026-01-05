@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useLanguage } from "./_components/LanguageProvider";
+import { useLanguage } from "@/components/LanguageProvider";
 import { homeContent } from "./i18n";
 
 export default function Home() {
@@ -159,7 +159,9 @@ export default function Home() {
                     <p className="font-semibold text-slate-900">
                       {status.title}
                     </p>
-                    <p className="text-slate-500">{copy.workspace.badgeTitle}</p>
+                    <p className="text-slate-500">
+                      {copy.workspace.badgeTitle}
+                    </p>
                   </div>
                   <span className="rounded-full bg-slate-900 px-3 py-1 text-xs font-semibold text-amber-100">
                     {language === "zh" ? "查看" : "View"}
