@@ -1,10 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useLanguage } from "@/components/LanguageProvider";
+import { useLanguage } from "@src/components/LanguageProvider";
 import { layoutCopy } from "../app/i18n";
 import LanguageSwitch from "./LanguageSwitch";
-import ConnectWalletButton from "@/components/ConnectWalletButton";
+import ConnectWalletButton from "@src/components/ConnectWalletButton";
 
 export default function LayoutShell({
   children,

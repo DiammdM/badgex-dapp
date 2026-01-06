@@ -2,50 +2,41 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { Flame, Leaf, Star, Sun, Zap } from "lucide-react";
-import { useLanguage } from "@/components/LanguageProvider";
+import { Flame, Leaf, Star, Sun, Zap, type LucideIcon } from "lucide-react";
+import { useLanguage } from "@src/components/LanguageProvider";
+import {
+  BADGE_BORDER_OPTIONS,
+  BADGE_CATEGORY_OPTIONS,
+  BADGE_DEFAULTS,
+  BADGE_ICON_OPTIONS,
+  BADGE_SHAPE_OPTIONS,
+  BADGE_THEME_OPTIONS,
+  type BadgeBorderId,
+  type BadgeCategoryValue,
+  type BadgeShapeId,
+  type BadgeThemeId,
+  type BadgeIconId,
+} from "@src/types/badge-options";
 import { builderContent } from "../i18n";
+import { BadgePropertyNames } from "@src/types/badge";
+import { BadgeApiPayload } from "@src/types/badge";
 
 const PREVIEW_SIZE = 512;
-const DEFAULT_LEVEL = 3;
-const DEFAULT_THEME_INDEX = 0;
-const DEFAULT_SHAPE_INDEX = 1;
-const DEFAULT_BORDER_INDEX = 1;
-const DEFAULT_ICON_INDEX = 0;
-const DEFAULT_CATEGORY_INDEX = 1;
 
-const THEME_PRESETS = [
-  {
-    id: "seafoam",
-    fill: ["#f1fffa", "#a7f3d0"],
-    border: "#0f766e",
-    text: "#115e59",
-    icon: "#0f766e",
-    backdrop: "from-emerald-200 via-emerald-100 to-amber-100",
-  },
-  {
-    id: "sandstone",
-    fill: ["#fff5db", "#f5c47a"],
-    border: "#b45309",
-    text: "#92400e",
-    icon: "#b45309",
-    backdrop: "from-amber-200 via-amber-100 to-orange-100",
-  },
-  {
-    id: "copper",
-    fill: ["#ffe8d5", "#f0a26b"],
-    border: "#9a3412",
-    text: "#7c2d12",
-    icon: "#9a3412",
-    backdrop: "from-orange-200 via-orange-100 to-amber-100",
-  },
-];
+const DEFAULT_THEME_ID = BADGE_DEFAULTS.themeId;
+const DEFAULT_SHAPE_ID = BADGE_DEFAULTS.shapeId;
+const DEFAULT_BORDER_ID = BADGE_DEFAULTS.borderId;
+const DEFAULT_ICON_ID = BADGE_DEFAULTS.iconId;
+const DEFAULT_CATEGORY_ID = BADGE_DEFAULTS.categoryId;
 
-const SHAPE_IDS = ["circle", "hexagon", "shield"] as const;
-const BORDER_IDS = ["none", "thin", "bold"] as const;
-const BORDER_WIDTHS = [0, 6, 12];
-const ICON_IDS = ["none", "star", "bolt", "leaf", "flame", "sun"] as const;
-const ICON_COMPONENTS = [null, Star, Zap, Leaf, Flame, Sun];
+const ICON_COMPONENTS: Record<BadgeIconId, LucideIcon | null> = {
+  none: null,
+  star: Star,
+  bolt: Zap,
+  leaf: Leaf,
+  flame: Flame,
+  sun: Sun,
+};
 
 const buildHexagonPoints = (cx: number, cy: number, radius: number) => {
   const points: string[] = [];
@@ -71,55 +62,70 @@ const getTextSize = (text: string) => {
 export default function BuilderPage() {
   const { language } = useLanguage();
   const copy = builderContent[language];
-  const englishCopy = builderContent.en;
-
   const [badgeName, setBadgeName] = useState("");
   const [description, setDescription] = useState("");
   const [badgeText, setBadgeText] = useState("");
-  const [themeIndex, setThemeIndex] = useState(DEFAULT_THEME_INDEX);
-  const [shapeIndex, setShapeIndex] = useState(DEFAULT_SHAPE_INDEX);
-  const [borderIndex, setBorderIndex] = useState(DEFAULT_BORDER_INDEX);
-  const [iconIndex, setIconIndex] = useState(DEFAULT_ICON_INDEX);
-  const [categoryIndex, setCategoryIndex] = useState(DEFAULT_CATEGORY_INDEX);
-  const [level, setLevel] = useState(DEFAULT_LEVEL);
+  const [themeId, setThemeId] = useState<BadgeThemeId>(DEFAULT_THEME_ID);
+  const [shapeId, setShapeId] = useState<BadgeShapeId>(DEFAULT_SHAPE_ID);
+  const [borderId, setBorderId] = useState<BadgeBorderId>(DEFAULT_BORDER_ID);
+  const [iconId, setIconId] = useState<BadgeIconId>(DEFAULT_ICON_ID);
+  const [categoryId, setCategoryId] =
+    useState<BadgeCategoryValue>(DEFAULT_CATEGORY_ID);
   const [saveStatus, setSaveStatus] = useState<
     "idle" | "saving" | "success" | "error"
   >("idle");
 
-  const englishThemes = englishCopy.themes;
-  const englishShapes = englishCopy.shapes;
-  const englishBorders = englishCopy.borders;
-  const englishIcons = englishCopy.icons;
-  const englishCategories = englishCopy.categories;
-
-  const themeOptions = copy.themes.map((theme, index) => ({
-    ...THEME_PRESETS[index],
-    label: theme.name,
-    englishLabel: englishThemes[index]?.name ?? theme.name,
-    accentClass: theme.accent,
+  const themeOptions = BADGE_THEME_OPTIONS.map((theme) => ({
+    ...theme,
+    label: theme.labels[language],
+    englishLabel: theme.labels.en,
   }));
 
-  const iconOptions = copy.icons.map((label, index) => ({
-    id: ICON_IDS[index] ?? ICON_IDS[0],
-    label,
-    Icon: ICON_COMPONENTS[index],
+  const shapeOptions = BADGE_SHAPE_OPTIONS.map((shape) => ({
+    ...shape,
+    label: shape.labels[language],
+    englishLabel: shape.labels.en,
   }));
 
-  const selectedTheme = themeOptions[themeIndex] ?? themeOptions[0];
-  const selectedShape = SHAPE_IDS[shapeIndex] ?? SHAPE_IDS[0];
-  const selectedBorderWidth = BORDER_WIDTHS[borderIndex] ?? BORDER_WIDTHS[0];
-  const selectedBorderId = BORDER_IDS[borderIndex] ?? BORDER_IDS[0];
-  const selectedCategory = copy.categories[categoryIndex] ?? copy.categories[0];
+  const borderOptions = BADGE_BORDER_OPTIONS.map((border) => ({
+    ...border,
+    label: border.labels[language],
+    englishLabel: border.labels.en,
+  }));
+
+  const iconOptions = BADGE_ICON_OPTIONS.map((icon) => ({
+    ...icon,
+    label: icon.labels[language],
+    englishLabel: icon.labels.en,
+    Icon: ICON_COMPONENTS[icon.id],
+  }));
+
+  const categoryOptions = BADGE_CATEGORY_OPTIONS.map((category) => ({
+    ...category,
+    label: category.labels[language],
+    englishLabel: category.labels.en,
+  }));
+
+  const selectedTheme =
+    themeOptions.find((theme) => theme.id === themeId) ?? themeOptions[0];
+  const selectedShape =
+    shapeOptions.find((shape) => shape.id === shapeId) ?? shapeOptions[0];
+  const selectedBorder =
+    borderOptions.find((border) => border.id === borderId) ?? borderOptions[0];
+  const selectedIcon =
+    iconOptions.find((icon) => icon.id === iconId) ?? iconOptions[0];
+  const selectedCategory =
+    categoryOptions.find((category) => category.id === categoryId) ??
+    categoryOptions[0];
+  const selectedShapeId = selectedShape?.id ?? BADGE_SHAPE_OPTIONS[0].id;
+  const selectedBorderId = selectedBorder?.id ?? BADGE_BORDER_OPTIONS[0].id;
+  const selectedBorderWidth =
+    selectedBorder?.width ?? BADGE_BORDER_OPTIONS[0].width;
+  const selectedCategoryLabel =
+    selectedCategory?.label ?? categoryOptions[0].label;
   const selectedCategoryEnglish =
-    englishCategories[categoryIndex] ?? englishCategories[0];
-  const selectedShapeLabel = copy.shapes[shapeIndex] ?? copy.shapes[0];
-  const selectedShapeEnglishLabel =
-    englishShapes[shapeIndex] ?? englishShapes[0];
-  const selectedBorderLabel = copy.borders[borderIndex] ?? copy.borders[0];
-  const selectedBorderEnglishLabel =
-    englishBorders[borderIndex] ?? englishBorders[0];
-  const selectedIcon = iconOptions[iconIndex] ?? iconOptions[0];
-  const selectedIconEnglishLabel = englishIcons[iconIndex] ?? englishIcons[0];
+    selectedCategory?.englishLabel ?? categoryOptions[0].englishLabel;
+  const selectedShapeLabel = selectedShape?.label ?? shapeOptions[0].label;
   const selectedThemeEnglishLabel = selectedTheme?.englishLabel ?? "";
   const displayText = badgeText.trim().slice(0, 10) || copy.previewText;
   const displayName = badgeName.trim() || copy.metadataPreview.name;
@@ -137,7 +143,6 @@ export default function BuilderPage() {
       description: displayDescription,
       image: "ipfs://<image_cid>",
       attributes: [
-        { trait_type: "Level", value: level },
         { trait_type: "Category", value: selectedCategoryEnglish },
         { trait_type: "Theme", value: selectedThemeEnglishLabel },
       ],
@@ -145,13 +150,26 @@ export default function BuilderPage() {
     [
       displayDescription,
       displayName,
-      level,
       selectedCategoryEnglish,
       selectedThemeEnglishLabel,
     ]
   );
 
   const metadataJson = JSON.stringify(metadataPreview, null, 2);
+
+  // generate params
+  const params: BadgeApiPayload = {
+    name: displayName,
+    description: displayDescription,
+    config: {
+      [BadgePropertyNames.Theme]: selectedTheme.id,
+      [BadgePropertyNames.Shape]: selectedShapeId,
+      [BadgePropertyNames.Border]: selectedBorderId,
+      [BadgePropertyNames.Icon]: selectedIcon.id,
+      [BadgePropertyNames.Text]: displayText,
+      [BadgePropertyNames.Category]: selectedCategoryEnglish,
+    },
+  };
 
   const handleSave = async () => {
     if (saveStatus === "saving") return;
@@ -160,23 +178,7 @@ export default function BuilderPage() {
       const response = await fetch("/api/badges", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: displayName,
-          description: displayDescription,
-          config: {
-            themeId: selectedTheme?.id ?? "",
-            themeLabel: selectedThemeEnglishLabel,
-            shapeId: selectedShape,
-            shapeLabel: selectedShapeEnglishLabel,
-            borderId: selectedBorderId,
-            borderLabel: selectedBorderEnglishLabel,
-            iconId: selectedIcon?.id ?? "",
-            iconLabel: selectedIconEnglishLabel,
-            text: displayText,
-            level,
-            category: selectedCategoryEnglish,
-          },
-        }),
+        body: JSON.stringify(params),
       });
 
       if (!response.ok) {
@@ -194,12 +196,11 @@ export default function BuilderPage() {
     setBadgeName("");
     setDescription("");
     setBadgeText("");
-    setThemeIndex(DEFAULT_THEME_INDEX);
-    setShapeIndex(DEFAULT_SHAPE_INDEX);
-    setBorderIndex(DEFAULT_BORDER_INDEX);
-    setIconIndex(DEFAULT_ICON_INDEX);
-    setCategoryIndex(DEFAULT_CATEGORY_INDEX);
-    setLevel(DEFAULT_LEVEL);
+    setThemeId(DEFAULT_THEME_ID);
+    setShapeId(DEFAULT_SHAPE_ID);
+    setBorderId(DEFAULT_BORDER_ID);
+    setIconId(DEFAULT_ICON_ID);
+    setCategoryId(DEFAULT_CATEGORY_ID);
     setSaveStatus("idle");
   };
 
@@ -294,13 +295,13 @@ export default function BuilderPage() {
               <select
                 className="mt-2 w-full rounded-2xl border border-slate-900/10 bg-white px-4 py-3 text-sm text-slate-800 focus:border-slate-900/40 focus:outline-none"
                 onChange={(event) =>
-                  setCategoryIndex(Number(event.target.value))
+                  setCategoryId(event.target.value as BadgeCategoryValue)
                 }
-                value={categoryIndex}
+                value={categoryId}
               >
-                {copy.categories.map((category, index) => (
-                  <option key={category} value={index}>
-                    {category}
+                {categoryOptions.map((category) => (
+                  <option key={category.id} value={category.id}>
+                    {category.label}
                   </option>
                 ))}
               </select>
@@ -310,15 +311,15 @@ export default function BuilderPage() {
                 {copy.theme}
               </label>
               <div className="mt-3 grid gap-3 sm:grid-cols-3">
-                {themeOptions.map((theme, index) => (
+                {themeOptions.map((theme) => (
                   <button
                     className={`flex items-center justify-between rounded-2xl border px-4 py-3 text-sm font-medium transition hover:-translate-y-0.5 ${
-                      index === themeIndex
+                      theme.id === themeId
                         ? "border-slate-900/40 bg-white text-slate-900"
                         : "border-slate-900/10 bg-white text-slate-600"
                     }`}
                     key={theme.id}
-                    onClick={() => setThemeIndex(index)}
+                    onClick={() => setThemeId(theme.id)}
                     type="button"
                   >
                     {theme.label}
@@ -335,18 +336,18 @@ export default function BuilderPage() {
                   {copy.shape}
                 </label>
                 <div className="mt-3 flex flex-wrap gap-2">
-                  {copy.shapes.map((shape, index) => (
+                  {shapeOptions.map((shape) => (
                     <button
                       className={`rounded-full border px-4 py-2 text-xs font-semibold transition ${
-                        index === shapeIndex
+                        shape.id === shapeId
                           ? "border-slate-900/40 bg-white text-slate-900"
                           : "border-slate-900/10 bg-white text-slate-600"
                       }`}
-                      key={shape}
-                      onClick={() => setShapeIndex(index)}
+                      key={shape.id}
+                      onClick={() => setShapeId(shape.id)}
                       type="button"
                     >
-                      {shape}
+                      {shape.label}
                     </button>
                   ))}
                 </div>
@@ -356,18 +357,18 @@ export default function BuilderPage() {
                   {copy.border}
                 </label>
                 <div className="mt-3 flex flex-wrap gap-2">
-                  {copy.borders.map((border, index) => (
+                  {borderOptions.map((border) => (
                     <button
                       className={`rounded-full border px-4 py-2 text-xs font-semibold transition ${
-                        index === borderIndex
+                        border.id === borderId
                           ? "border-slate-900/40 bg-white text-slate-900"
                           : "border-slate-900/10 bg-white text-slate-600"
                       }`}
-                      key={border}
-                      onClick={() => setBorderIndex(index)}
+                      key={border.id}
+                      onClick={() => setBorderId(border.id)}
                       type="button"
                     >
-                      {border}
+                      {border.label}
                     </button>
                   ))}
                 </div>
@@ -379,17 +380,17 @@ export default function BuilderPage() {
                   {copy.icon}
                 </label>
                 <div className="mt-3 grid grid-cols-2 gap-2">
-                  {iconOptions.map((icon, index) => {
+                  {iconOptions.map((icon) => {
                     const IconComponent = icon.Icon;
                     return (
                       <button
                         className={`flex items-center gap-2 rounded-2xl border px-3 py-2 text-xs font-semibold transition ${
-                          index === iconIndex
+                          icon.id === iconId
                             ? "border-slate-900/40 bg-white text-slate-900"
                             : "border-slate-900/10 bg-white text-slate-600"
                         }`}
-                        key={icon.label}
-                        onClick={() => setIconIndex(index)}
+                        key={icon.id}
+                        onClick={() => setIconId(icon.id)}
                         type="button"
                       >
                         {IconComponent ? (
@@ -415,22 +416,6 @@ export default function BuilderPage() {
                   type="text"
                   value={badgeText}
                 />
-                <label className="mt-4 block text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">
-                  {copy.level}
-                </label>
-                <input
-                  className="mt-2 w-full accent-slate-900"
-                  max={5}
-                  min={1}
-                  onChange={(event) => setLevel(Number(event.target.value))}
-                  step={1}
-                  type="range"
-                  value={level}
-                />
-                <div className="mt-2 flex justify-between text-xs text-slate-500">
-                  <span>1</span>
-                  <span>5</span>
-                </div>
               </div>
             </div>
           </div>
@@ -464,7 +449,7 @@ export default function BuilderPage() {
                     <stop offset="100%" stopColor={selectedTheme?.fill[1]} />
                   </linearGradient>
                 </defs>
-                {selectedShape === "circle" && (
+                {selectedShapeId === "circle" && (
                   <circle
                     cx={256}
                     cy={256}
@@ -476,7 +461,7 @@ export default function BuilderPage() {
                     strokeWidth={selectedBorderWidth}
                   />
                 )}
-                {selectedShape === "hexagon" && (
+                {selectedShapeId === "hexagon" && (
                   <polygon
                     fill="url(#badgeFill)"
                     points={hexagonPoints}
@@ -486,7 +471,7 @@ export default function BuilderPage() {
                     strokeWidth={selectedBorderWidth}
                   />
                 )}
-                {selectedShape === "shield" && (
+                {selectedShapeId === "shield" && (
                   <path
                     d={shieldPath}
                     fill="url(#badgeFill)"
@@ -544,18 +529,12 @@ export default function BuilderPage() {
                   {displayText}
                 </p>
               </div>
-              <div className="rounded-2xl border border-slate-900/10 bg-slate-50/80 p-4 text-sm">
-                <p className="text-xs uppercase tracking-[0.3em] text-slate-500">
-                  {copy.summary.level}
-                </p>
-                <p className="mt-2 font-semibold text-slate-900">{level}</p>
-              </div>
               <div className="rounded-2xl border border-slate-900/10 bg-slate-50/80 p-4 text-sm sm:col-span-2">
                 <p className="text-xs uppercase tracking-[0.3em] text-slate-500">
                   {copy.summary.category}
                 </p>
                 <p className="mt-2 font-semibold text-slate-900">
-                  {selectedCategory}
+                  {selectedCategoryLabel}
                 </p>
               </div>
             </div>

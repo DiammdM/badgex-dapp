@@ -176,8 +176,7 @@ export const homeContent = {
       note: "保存后将 PNG 与 metadata 上传至 IPFS，并生成 tokenURI。",
     },
     flowTitle: "从生成到交易的顺畅流程",
-    flowDescription:
-      "Badgex 聚焦 MVP 核心步骤：生成、保存、铸造、上架、购买。",
+    flowDescription: "Badgex 聚焦 MVP 核心步骤：生成、保存、铸造、上架、购买。",
     steps: [
       {
         title: "设计徽章",
@@ -252,7 +251,8 @@ export const homeContent = {
     },
     closing: {
       title: "现在开始设计你的首枚徽章",
-      description: "在生成器中配置主题、边框与文本。保存后即可在徽章面板铸造与上架。",
+      description:
+        "在生成器中配置主题、边框与文本。保存后即可在徽章面板铸造与上架。",
       primary: "立即生成",
       secondary: "管理徽章",
     },
@@ -306,18 +306,8 @@ export const builderContent = {
       "2. Create metadata JSON and upload",
       "3. Store tokenURI in your badge list",
     ],
-    afterSaveNote:
-      "Saved badges appear in \"My Badges\" and are ready to mint.",
+    afterSaveNote: 'Saved badges appear in "My Badges" and are ready to mint.',
     afterSaveCta: "Go to My Badges",
-    themes: [
-      { name: "Seafoam Mint", accent: "bg-emerald-200" },
-      { name: "Sandstone Amber", accent: "bg-amber-200" },
-      { name: "Copper Dusk", accent: "bg-orange-200" },
-    ],
-    shapes: ["Circle", "Hexagon", "Shield"],
-    borders: ["None", "Thin", "Bold"],
-    icons: ["None", "Star", "Bolt", "Leaf", "Flame", "Sun"],
-    categories: ["Achievement", "Builder", "Community", "Mentor"],
     previewText: "BUILDER",
     previewTheme: "Seafoam Mint",
     previewShape: "Hexagon",
@@ -381,15 +371,6 @@ export const builderContent = {
     ],
     afterSaveNote: "保存后的徽章将出现在“我的徽章”中，可直接铸造。",
     afterSaveCta: "前往我的徽章",
-    themes: [
-      { name: "海沫薄荷", accent: "bg-emerald-200" },
-      { name: "砂岩琥珀", accent: "bg-amber-200" },
-      { name: "铜色暮光", accent: "bg-orange-200" },
-    ],
-    shapes: ["圆形", "六边形", "盾牌"],
-    borders: ["无", "细", "粗"],
-    icons: ["无", "星形", "闪电", "叶子", "火焰", "太阳"],
-    categories: ["成就", "建造者", "社群", "导师"],
     previewText: "建造者",
     previewTheme: "海沫薄荷",
     previewShape: "六边形",
@@ -411,7 +392,8 @@ export const marketContent = {
   en: {
     label: "Marketplace",
     title: "Fixed-price badge NFT listings",
-    description: "Browse live listings with royalty and platform fee breakdowns.",
+    description:
+      "Browse live listings with royalty and platform fee breakdowns.",
     snapshot: "Market Snapshot",
     stats: [
       { label: "Active listings", value: "16" },
@@ -496,11 +478,7 @@ export const marketContent = {
     royaltyPill: "版税 2.5%",
     latestTitle: "最新上架",
     searchPlaceholder: "搜索徽章",
-    sortOptions: [
-      "排序：最新上架",
-      "排序：价格升序",
-      "排序：价格降序",
-    ],
+    sortOptions: ["排序：最新上架", "排序：价格升序", "排序：价格降序"],
     priceRange: "价格范围",
     onlyBuyable: "仅可购买",
     royaltyLabel: "版税",
@@ -599,6 +577,11 @@ export const myBadgesContent = {
       delete: "Delete",
       notListed: "Not listed",
     },
+    connectAlert: {
+      title: "Connect your wallet",
+      description: "Please connect your wallet before minting this badge.",
+      action: "Got it",
+    },
     listedTag: "Listed",
     viewTag: "View",
     badges: [
@@ -687,6 +670,11 @@ export const myBadgesContent = {
       delete: "删除",
       notListed: "未上架",
     },
+    connectAlert: {
+      title: "请先连接钱包",
+      description: "铸造徽章前请先连接钱包。",
+      action: "知道了",
+    },
     listedTag: "已上架",
     viewTag: "查看",
     badges: [
@@ -742,7 +730,8 @@ export const badgesContent = {
   en: {
     label: "Badge NFT Explorer",
     title: "Browse minted badge NFTs",
-    description: "Discover minted badges with owner, attributes, and listing details.",
+    description:
+      "Discover minted badges with owner, attributes, and listing details.",
     toolsTitle: "Explorer Tools",
     searchPlaceholder: "Search name or tokenId",
     themeFilter: [
@@ -750,12 +739,7 @@ export const badgesContent = {
       "Theme: Sandstone Amber",
       "Theme: Seafoam Mint",
     ],
-    levelFilter: [
-      "Filter: All levels",
-      "Level 1-2",
-      "Level 3-4",
-      "Level 5",
-    ],
+    levelFilter: ["Filter: All levels", "Level 1-2", "Level 3-4", "Level 5"],
     stats: [
       { label: "Minted supply", value: "128" },
       { label: "Unique owners", value: "44" },
@@ -835,11 +819,7 @@ export const badgesContent = {
     description: "查看徽章所有者、属性与上架信息。",
     toolsTitle: "探索工具",
     searchPlaceholder: "搜索名称或 Token ID",
-    themeFilter: [
-      "筛选：全部主题",
-      "主题：砂岩琥珀",
-      "主题：海沫薄荷",
-    ],
+    themeFilter: ["筛选：全部主题", "主题：砂岩琥珀", "主题：海沫薄荷"],
     levelFilter: ["筛选：全部等级", "等级 1-2", "等级 3-4", "等级 5"],
     stats: [
       { label: "已铸造数量", value: "128" },
@@ -1081,4 +1061,4 @@ export const badgeDetailContent = {
       theme: "--",
     },
   },
-} as const;
+};

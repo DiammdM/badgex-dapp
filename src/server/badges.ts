@@ -1,12 +1,14 @@
 "server only";
 
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@src/lib/prisma";
 import {
   BadgeConfig,
   BadgeListItem,
   CreateBadgeInput,
   Metadata,
-} from "@/types/badge";
+  MetaAttribute,
+  BadgePropertyNames,
+} from "@src/types/badge";
 import { uploadBadgeImage, uploadBadgeMetadata } from "./ipfs";
 
 const IPFS_PIC_PREFIX = process.env.IPFS_PIC_PREFIX ?? "";
@@ -35,31 +37,14 @@ const buildBadgeMetadata = (
   imageCid: string,
   description?: string
 ): Metadata => {
-  const attributes: { trait_type: string; value: string | number }[] = [
-    { trait_type: "Level", value: config.level },
+  const attributes: MetaAttribute[] = [
+    { trait_type: BadgePropertyNames.Category, value: config.Category },
+    { trait_type: BadgePropertyNames.Theme, value: config.Theme },
+    { trait_type: BadgePropertyNames.Shape, value: config.Shape },
+    { trait_type: BadgePropertyNames.Border, value: config.Border },
+    { trait_type: BadgePropertyNames.Icon, value: config.Icon },
+    { trait_type: BadgePropertyNames.Text, value: config.Text },
   ];
-  if (config.category) {
-    attributes.push({ trait_type: "Category", value: config.category });
-  }
-  const themeValue = config.themeLabel || config.themeId;
-  if (themeValue) {
-    attributes.push({ trait_type: "Theme", value: themeValue });
-  }
-  const shapeValue = config.shapeLabel || config.shapeId;
-  if (shapeValue) {
-    attributes.push({ trait_type: "Shape", value: shapeValue });
-  }
-  const borderValue = config.borderLabel || config.borderId;
-  if (borderValue) {
-    attributes.push({ trait_type: "Border", value: borderValue });
-  }
-  const iconValue = config.iconLabel || config.iconId;
-  if (iconValue) {
-    attributes.push({ trait_type: "Icon", value: iconValue });
-  }
-  if (config.text) {
-    attributes.push({ trait_type: "Text", value: config.text });
-  }
 
   const metadata: Metadata = {
     name,
@@ -125,14 +110,7 @@ export const createBadgeForUser = async ({
       userId,
       name,
       description: description || null,
-      config: {
-        themeId: config.themeId,
-        shapeId: config.shapeId,
-        borderId: config.borderId,
-        iconId: config.iconId,
-        text: config.text,
-        level: config.level,
-      },
+      config,
       status: "SAVED",
       imageCid,
       metadataCid,

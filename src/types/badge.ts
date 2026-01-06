@@ -1,15 +1,24 @@
+export enum BadgePropertyNames {
+  Category = "Category",
+  Theme = "Theme",
+  Shape = "Shape",
+  Border = "Border",
+  Icon = "Icon",
+  Text = "Text",
+}
+
+export const BADGE_TRAITS = Object.values(BadgePropertyNames);
+
+export type BadgeTraitType = BadgePropertyNames;
+
 export type BadgeConfig = {
-  themeId: string;
-  themeLabel: string;
-  shapeId: string;
-  shapeLabel: string;
-  borderId: string;
-  borderLabel: string;
-  iconId: string;
-  iconLabel: string;
-  text: string;
-  level: number;
-  category: string;
+  [K in BadgePropertyNames]: string;
+};
+
+export type BadgeApiPayload = {
+  name: string;
+  description: string;
+  config: BadgeConfig;
 };
 
 export type BadgeListItem = {
@@ -43,12 +52,3 @@ export type MetaAttribute = {
   trait_type: BadgeTraitType;
   value: string | number | boolean;
 };
-
-export type BadgeTraitType =
-  | "Level"
-  | "Category"
-  | "Theme"
-  | "Shape"
-  | "Border"
-  | "Icon"
-  | "Text";

@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { defaultLanguage, getLanguage, type Language } from "@/app/i18n";
+import { defaultLanguage, getLanguage, type Language } from "@src/app/i18n";
 
 const STORAGE_KEY = "badgex-language";
 

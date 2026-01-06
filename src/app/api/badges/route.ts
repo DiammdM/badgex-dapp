@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
-import { createBadgeForUser, listBadgesForUser } from "@/server/badges";
+import { createBadgeForUser, listBadgesForUser } from "@src/server/badges";
+import { BadgeApiPayload } from "@src/types/badge";
+import { parseJson } from "@src/utils/request";
 
 const FIXED_USER_ID = "user_demo_001";
 
@@ -20,47 +22,20 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const name = typeof body?.name === "string" ? body.name.trim() : "";
-    const description =
-      typeof body?.description === "string"
-        ? body.description.trim()
-        : undefined;
-    const config = body?.config;
+    const body = await parseJson<BadgeApiPayload>(request);
+    const name = body.name.trim();
+    const description = body.description.trim();
+    const config = body.config;
 
     if (!name || !config || typeof config !== "object") {
       return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
-    }
-
-    const safeConfig = {
-      themeId: typeof config.themeId === "string" ? config.themeId : "",
-      themeLabel:
-        typeof config.themeLabel === "string" ? config.themeLabel : "",
-      shapeId: typeof config.shapeId === "string" ? config.shapeId : "",
-      shapeLabel:
-        typeof config.shapeLabel === "string" ? config.shapeLabel : "",
-      borderId: typeof config.borderId === "string" ? config.borderId : "",
-      borderLabel:
-        typeof config.borderLabel === "string" ? config.borderLabel : "",
-      iconId: typeof config.iconId === "string" ? config.iconId : "",
-      iconLabel: typeof config.iconLabel === "string" ? config.iconLabel : "",
-      text: typeof config.text === "string" ? config.text : "",
-      level: typeof config.level === "number" ? config.level : 0,
-      category: typeof config.category === "string" ? config.category : "",
-    };
-
-    if (!safeConfig.themeId || !safeConfig.shapeId || !safeConfig.borderId) {
-      return NextResponse.json(
-        { error: "Missing config fields" },
-        { status: 400 }
-      );
     }
 
     const result = await createBadgeForUser({
       userId: FIXED_USER_ID,
       name,
       description,
-      config: safeConfig,
+      config: config,
     });
 
     return NextResponse.json(result);

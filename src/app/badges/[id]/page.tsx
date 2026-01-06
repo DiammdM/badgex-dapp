@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useLanguage } from "@/components/LanguageProvider";
+import { useLanguage } from "@src/components/LanguageProvider";
 import { badgeDetailContent } from "../../i18n";
 
 type BadgeAttribute = {

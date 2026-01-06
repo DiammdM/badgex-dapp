@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useLanguage } from "@/components/LanguageProvider";
+import { useLanguage } from "@src/components/LanguageProvider";
 import { marketContent } from "../i18n";
 
 export default function MarketPage() {

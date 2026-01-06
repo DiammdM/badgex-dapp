@@ -1,9 +1,22 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useLanguage } from "@/components/LanguageProvider";
-import { builderContent, myBadgesContent } from "../i18n";
+import { useLanguage } from "@src/components/LanguageProvider";
+import { myBadgesContent } from "../i18n";
+import { useConnection } from "wagmi";
+import type { BadgeConfig } from "@src/types/badge";
+import { BADGE_THEME_OPTIONS } from "@src/types/badge-options";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@src/components/ui/alert-dialog";
 
 type BadgeStatus = "draft" | "saved" | "minted";
 
@@ -17,10 +30,7 @@ type BadgeRecordResponse = {
   id: string;
   name: string;
   status: "DRAFT" | "SAVED" | "MINTED";
-  config?: {
-    themeId?: string;
-    level?: number;
-  } | null;
+  config?: Partial<BadgeConfig> | null;
   imageCid?: string | null;
   imageUrl?: string | null;
   metadataCid?: string | null;
@@ -34,22 +44,16 @@ type BadgeListItem = {
   name: string;
   status: BadgeStatus;
   theme: string;
-  level: number;
   updated: string;
   tokenURI?: string;
   imageCid?: string;
   imageUrl?: string;
   metadataCid?: string;
+  config?: Partial<BadgeConfig> | null;
   tokenId?: string;
   price?: string;
   listed?: boolean;
   listingId?: string;
-};
-
-const THEME_LABELS: Record<string, number> = {
-  seafoam: 0,
-  sandstone: 1,
-  copper: 2,
 };
 
 const getCidFromIpfs = (value?: string | null) => {
@@ -69,10 +73,12 @@ export default function MyBadgesPage() {
   const { language } = useLanguage();
   const copy = myBadgesContent[language];
   const locale = language === "zh" ? "zh-CN" : "en-US";
-  const themeNames = builderContent[language].themes;
 
   const [badges, setBadges] = useState<BadgeRecordResponse[]>([]);
   const [loading, setLoading] = useState(false);
+  const [showConnectAlert, setShowConnectAlert] = useState(false);
+
+  const { isConnected, address, chainId } = useConnection();
 
   const loadBadges = useCallback(async () => {
     setLoading(true);
@@ -98,13 +104,12 @@ export default function MyBadgesPage() {
   const displayBadges = useMemo<BadgeListItem[]>(() => {
     return badges.map((badge) => {
       const config =
-        badge.config && typeof badge.config === "object" ? badge.config : {};
-      const themeId = typeof config?.themeId === "string" ? config.themeId : "";
-      const themeIndex =
-        themeId && themeId in THEME_LABELS ? THEME_LABELS[themeId] : -1;
-      const theme =
-        themeIndex >= 0 ? themeNames[themeIndex]?.name ?? themeId : themeId;
-      const level = typeof config?.level === "number" ? config.level : 0;
+        badge.config && typeof badge.config === "object"
+          ? (badge.config as Partial<BadgeConfig>)
+          : {};
+      const theme = BADGE_THEME_OPTIONS.find(
+        (option) => option.id === config.Theme
+      )?.labels[language];
       const updated = new Date(badge.updatedAt).toLocaleDateString(locale, {
         year: "numeric",
         month: "short",
@@ -136,15 +141,15 @@ export default function MyBadgesPage() {
         name: badge.name,
         status,
         theme: theme || "-",
-        level,
         updated,
         tokenURI,
         imageCid: imageCid ?? undefined,
         imageUrl,
         metadataCid: metadataCid ?? undefined,
+        config,
       };
     });
-  }, [badges, locale, themeNames]);
+  }, [badges, language, locale]);
 
   const badgeStats = useMemo(() => {
     const saved = badges.filter((badge) => badge.status === "SAVED").length;
@@ -154,15 +159,25 @@ export default function MyBadgesPage() {
 
   const mint = async (badge: BadgeListItem) => {
     // check the login state
-    // TODO
+    if (!isConnected || !address || !chainId) {
+      setShowConnectAlert(true);
+      return;
+    }
+
+    // 获取ipfs地址
+    // const attributes = buildMintAttributes(badge);
+    // console.log(`attributes:${attributes}`);
 
     // get the finger and signature
+
     const response = await fetch("/api/mint-signature", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        to: "",
-        attributes: [],
+        to: address,
+        tokenURI: badge.tokenURI,
+        cid: badge.metadataCid,
+        chainId,
       }),
     });
     if (!response.ok) {
@@ -170,12 +185,28 @@ export default function MyBadgesPage() {
     }
     const { signature, fingerprint } = await response.json();
 
+    console.log(`signature:${signature}`);
+    console.log(`fingerprint:${fingerprint}`);
+
     // call the mint function on the contract
     // TODO
   };
 
   return (
     <div className="space-y-10">
+      <AlertDialog open={showConnectAlert} onOpenChange={setShowConnectAlert}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{copy.connectAlert.title}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {copy.connectAlert.description}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction>{copy.connectAlert.action}</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       <section className="grid animate-[fade-in-up_0.6s_ease-out_both] gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
         <div className="space-y-4">
           <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">
@@ -275,12 +306,13 @@ export default function MyBadgesPage() {
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
-                    <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-amber-200 via-amber-100 to-emerald-100 text-xs font-semibold text-slate-700">
+                    <div className="relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-amber-200 via-amber-100 to-emerald-100 text-xs font-semibold text-slate-700">
                       {badge.imageUrl ? (
-                        <img
+                        <Image
                           alt={badge.name}
-                          className="h-full w-full object-cover"
-                          loading="lazy"
+                          className="object-cover"
+                          fill
+                          sizes="64px"
                           src={badge.imageUrl}
                         />
                       ) : (
@@ -309,14 +341,6 @@ export default function MyBadgesPage() {
                   </div>
                 </div>
                 <div className="grid gap-3 text-xs text-slate-500 sm:grid-cols-2">
-                  <div className="rounded-2xl border border-slate-900/10 bg-slate-50/80 p-3">
-                    <p className="uppercase tracking-[0.28em]">
-                      {copy.cardLabels.level}
-                    </p>
-                    <p className="mt-1 text-sm font-semibold text-slate-900">
-                      {badge.level}
-                    </p>
-                  </div>
                   <div className="rounded-2xl border border-slate-900/10 bg-slate-50/80 p-3">
                     <p className="uppercase tracking-[0.28em]">
                       {copy.cardLabels.updated}
@@ -358,8 +382,11 @@ export default function MyBadgesPage() {
                   ) : null}
                   {badge.status === "saved" ? (
                     <button
-                      className="rounded-full bg-slate-900 px-4 py-2 text-xs font-semibold text-amber-50"
+                      className="rounded-full bg-slate-900 px-4 py-2 text-xs font-semibold text-amber-50 cursor-pointer"
                       type="button"
+                      onClick={() => {
+                        mint(badge);
+                      }}
                     >
                       {copy.actions.mint}
                     </button>
@@ -376,9 +403,6 @@ export default function MyBadgesPage() {
                     <button
                       className="rounded-full bg-amber-100 px-4 py-2 text-xs font-semibold text-amber-900"
                       type="button"
-                      onClick={() => {
-                        mint(badge);
-                      }}
                     >
                       {copy.actions.list}
                     </button>
@@ -390,7 +414,7 @@ export default function MyBadgesPage() {
                     {copy.actions.view}
                   </Link>
                   <button
-                    className="rounded-full border border-slate-900/10 bg-white px-4 py-2 text-xs font-semibold text-slate-600"
+                    className="rounded-full border border-slate-900/10 bg-white px-4 py-2 text-xs font-semibold text-slate-600 cursor-pointer"
                     type="button"
                   >
                     {copy.actions.delete}

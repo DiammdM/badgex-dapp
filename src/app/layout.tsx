@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import { Fraunces, Sora } from "next/font/google";
 import { defaultLanguage } from "./i18n";
 import LayoutShell from "../components/LayoutShell";
-import { LanguageProvider } from "@/components/LanguageProvider";
-import WalletProvider from "@/components/WalletProvider";
+import { LanguageProvider } from "@src/components/LanguageProvider";
+import WalletProvider from "@src/components/WalletProvider";
 import "@rainbow-me/rainbowkit/styles.css";
 import "./globals.css";
 

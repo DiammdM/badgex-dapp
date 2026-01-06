@@ -8,19 +8,9 @@ import {
   keccak256,
   toUtf8Bytes,
 } from "ethers";
-import { MetaAttribute } from "@/types/badge";
+import { MetaAttribute, BADGE_TRAITS } from "@src/types/badge";
 
 const issuerPrivateKey = process.env.ISSUER_PRIVATE_KEY as string;
-
-const BADGE_ATTR = [
-  "Level",
-  "Category",
-  "Theme",
-  "Shape",
-  "Border",
-  "Icon",
-  "Text",
-];
 
 const DOMAIN_TYPEHASH = keccak256(
   toUtf8Bytes(
@@ -37,16 +27,15 @@ type MintSignatureParams = {
   to: string;
   fingerprint: string;
   chainId: bigint | number;
-  verifyingContract: string;
-  issuerPrivateKey: string;
+  contractAddr: string;
 };
 
 export function buildFingerprint(attributes: MetaAttribute[]): string {
   let payload = "";
-  BADGE_ATTR.map((item, index) => {
+  BADGE_TRAITS.forEach((item, index) => {
     const attr = attributes.find((a) => a.trait_type === item);
     payload += `${item}:${attr?.value}`;
-    payload += index < BADGE_ATTR.length - 1 ? "|" : "";
+    payload += index < BADGE_TRAITS.length - 1 ? "|" : "";
   });
   return keccak256(toUtf8Bytes(payload));
 }
@@ -55,7 +44,7 @@ export function buildSignature({
   to,
   fingerprint,
   chainId,
-  verifyingContract,
+  contractAddr,
 }: MintSignatureParams): string {
   const abiCoder = AbiCoder.defaultAbiCoder();
   // build struct hash
@@ -74,7 +63,7 @@ export function buildSignature({
         DOMAIN_NAME_HASH,
         DOMAIN_VERSION_HASH,
         chainId,
-        getAddress(verifyingContract),
+        getAddress(contractAddr),
       ]
     )
   );

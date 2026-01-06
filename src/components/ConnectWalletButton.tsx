@@ -3,7 +3,7 @@
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import Image from "next/image";
 import { useBalance, useConnection } from "wagmi";
-import { formatBalance } from "@/utils/walletUtils";
+import { formatBalance } from "@src/utils/walletUtils";
 
 type ConnectWalletButtonProps = {
   connectLabel: string;
@@ -51,7 +51,6 @@ export default function ConnectWalletButton({
             balanceLabel = `${formattedBalance} ${balanceData.symbol}`;
           }
         }
-        console.log("account:avar:" + account?.ensAvatar);
 
         return (
           <div

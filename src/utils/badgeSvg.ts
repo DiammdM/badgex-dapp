@@ -1,10 +1,4 @@
-export type BadgeSvgConfig = {
-  themeId: string;
-  shapeId: string;
-  borderId: string;
-  iconId?: string;
-  text?: string;
-};
+import { BadgeConfig, BadgePropertyNames } from "@src/types/badge";
 
 type ThemePreset = {
   fill: [string, string];
@@ -114,7 +108,7 @@ const buildIconMarkup = (
   color: string,
   x: number,
   y: number,
-  size: number,
+  size: number
 ) => {
   if (!iconId || iconId === "none") return "";
   const nodes = ICON_NODES[iconId];
@@ -131,30 +125,31 @@ const buildIconMarkup = (
     .join("");
 
   return `
-    <g transform=\"translate(${x.toFixed(2)} ${y.toFixed(2)}) scale(${scale.toFixed(4)})\" fill=\"none\" stroke=\"${color}\" stroke-width=\"2.4\" stroke-linecap=\"round\" stroke-linejoin=\"round\">${parts}</g>`;
+    <g transform=\"translate(${x.toFixed(2)} ${y.toFixed(
+    2
+  )}) scale(${scale.toFixed(
+    4
+  )})\" fill=\"none\" stroke=\"${color}\" stroke-width=\"2.4\" stroke-linecap=\"round\" stroke-linejoin=\"round\">${parts}</g>`;
 };
 
-export const buildBadgeSvg = (config: BadgeSvgConfig) => {
-  const theme = THEME_PRESETS[config.themeId] ?? THEME_PRESETS.seafoam;
-  const shapeId =
-    config.shapeId === "circle" || config.shapeId === "shield"
-      ? config.shapeId
-      : "hexagon";
-  const borderId =
-    config.borderId === "none" || config.borderId === "bold"
-      ? config.borderId
-      : "thin";
+export const buildBadgeSvg = (config: BadgeConfig) => {
+  const themeId = config[BadgePropertyNames.Theme];
+  const shapeId = config[BadgePropertyNames.Shape];
+  const borderId = config[BadgePropertyNames.Border];
+  const iconValue = config[BadgePropertyNames.Icon];
+  const textValue = config[BadgePropertyNames.Text];
+  const theme = THEME_PRESETS[themeId] ?? THEME_PRESETS.seafoam;
   const borderWidth = borderId === "none" ? 0 : borderId === "bold" ? 12 : 6;
-  const text = escapeXml((config.text ?? "BADGE").trim().slice(0, 10));
+  const text = escapeXml((textValue || "BADGE").trim().slice(0, 10));
   const textSize = getTextSize(text);
   const iconSize = 96;
   const iconCenterY = 190;
   const iconMarkup = buildIconMarkup(
-    config.iconId,
+    iconValue,
     theme.icon,
     256 - iconSize / 2,
     iconCenterY - iconSize / 2,
-    iconSize,
+    iconSize
   );
   const textY = iconMarkup ? 340 : 300;
   const hexagonPoints = buildHexagonPoints(256, 256, 200);
@@ -164,8 +159,8 @@ export const buildBadgeSvg = (config: BadgeSvgConfig) => {
     shapeId === "circle"
       ? `<circle cx=\"256\" cy=\"256\" r=\"200\" fill=\"url(#badgeFill)\" stroke=\"${borderColor}\" stroke-width=\"${borderWidth}\" />`
       : shapeId === "shield"
-        ? `<path d=\"M256 58 L428 122 V252 C428 354 354 430 256 468 C158 430 84 354 84 252 V122 Z\" fill=\"url(#badgeFill)\" stroke=\"${borderColor}\" stroke-width=\"${borderWidth}\" />`
-        : `<polygon points=\"${hexagonPoints}\" fill=\"url(#badgeFill)\" stroke=\"${borderColor}\" stroke-width=\"${borderWidth}\" />`;
+      ? `<path d=\"M256 58 L428 122 V252 C428 354 354 430 256 468 C158 430 84 354 84 252 V122 Z\" fill=\"url(#badgeFill)\" stroke=\"${borderColor}\" stroke-width=\"${borderWidth}\" />`
+      : `<polygon points=\"${hexagonPoints}\" fill=\"url(#badgeFill)\" stroke=\"${borderColor}\" stroke-width=\"${borderWidth}\" />`;
 
   return `
 <svg xmlns=\"http://www.w3.org/2000/svg\" width=\"${PREVIEW_SIZE}\" height=\"${PREVIEW_SIZE}\" viewBox=\"0 0 ${PREVIEW_SIZE} ${PREVIEW_SIZE}\">
