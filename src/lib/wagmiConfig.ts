@@ -1,9 +1,19 @@
 import { createConfig, http, injected } from "wagmi";
-import { mainnet, sepolia, localhost } from "wagmi/chains";
+import { mainnet, sepolia } from "wagmi/chains";
+import { defineChain } from "viem";
 import { metaMask, walletConnect } from "wagmi/connectors";
 
+const localChain = defineChain({
+  id: 31337,
+  name: "Localhost",
+  nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
+  rpcUrls: {
+    default: { http: ["http://127.0.0.1:8545"] },
+  },
+});
+
 export const config = createConfig({
-  chains: [mainnet, sepolia, localhost],
+  chains: [mainnet, sepolia, localChain],
 
   // rpc channel
   transports: {
@@ -13,7 +23,7 @@ export const config = createConfig({
     [sepolia.id]: http(
       process.env.NEXT_PUBLIC_SEPOLIA_RPC ?? "https://rpc.sepolia.org"
     ),
-    [localhost.id]: http("http://127.0.0.1:8545"),
+    [localChain.id]: http("http://127.0.0.1:8545"),
   },
 
   ssr: true,

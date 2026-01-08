@@ -11,11 +11,10 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     const to = typeof body?.to === "string" ? body.to : "";
-    const tokenURI = body?.tokenURI;
     const cid = body?.cid;
     const chainId = BigInt(body?.chainId);
 
-    if (!to || !tokenURI || !cid || !chainId) {
+    if (!to || !cid || !chainId) {
       return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
     }
 
@@ -71,7 +70,11 @@ export async function POST(request: Request) {
       contractAddr: normalizedContractAddr,
     });
 
-    return NextResponse.json({ signature, fingerprint });
+    return NextResponse.json({
+      signature,
+      fingerprint,
+      contractAddress: normalizedContractAddr,
+    });
   } catch (error) {
     console.error("Failed to sign mint payload", error);
     return NextResponse.json(

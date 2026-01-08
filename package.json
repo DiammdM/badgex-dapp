@@ -11,6 +11,7 @@
     "kill": "npx kill-port 3000",
     "link": "pnpm link --global @badgex/contracts",
     "script:test": "tsx src/scripts/Test.ts",
+    "script:check-issuer": "tsx script/check-issuer.ts",
     "wagmi:generate": "pnpm wagmi generate"
   },
   "dependencies": {
