@@ -29,6 +29,7 @@ model BadgeRecord {
   imageCid    String?
   metadataCid String?
   tokenUri    String?
+  tokenId     String?
   ipfsUrl     String
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt

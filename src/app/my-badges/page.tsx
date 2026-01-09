@@ -4,15 +4,15 @@ import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLanguage } from "@src/components/LanguageProvider";
-import { myBadgesContent } from "../i18n";
+import { myBadgesContent, global } from "../i18n";
 import {
   useConnection,
   usePublicClient,
   useWaitForTransactionReceipt,
 } from "wagmi";
-import { BaseError, ContractFunctionRevertedError } from "viem";
+import { BaseError, ContractFunctionRevertedError, parseEventLogs } from "viem";
 import { badgeNftAbi, useWriteBadgeNftMintBadge } from "@src/generated/wagmi";
-import type { BadgeConfig } from "@src/types/badge";
+import { BadgeRecordStatus, type BadgeConfig } from "@src/types/badge";
 import { BADGE_THEME_OPTIONS } from "@src/types/badge-options";
 import {
   AlertDialog,
@@ -24,20 +24,21 @@ import {
   AlertDialogTitle,
 } from "@src/components/ui/alert-dialog";
 
-type BadgeStatus = "draft" | "saved" | "minted";
-
 type BadgeRecordResponse = {
   id: string;
   name: string;
-  status: "DRAFT" | "SAVED" | "MINTED";
+  status: BadgeRecordStatus;
   config?: Partial<BadgeConfig> | null;
   imageCid?: string | null;
   imageUrl?: string | null;
   metadataCid?: string | null;
   tokenUri?: string | null;
+  tokenId?: string | null;
   ipfsUrl?: string | null;
   updatedAt: string;
 };
+
+type BadgeStatus = Lowercase<BadgeRecordStatus>;
 
 type BadgeListItem = {
   id: string;
@@ -57,6 +58,7 @@ type BadgeListItem = {
 };
 
 type MintContext = {
+  badgeId: string;
   contractAddress: `0x${string}`;
   fingerprint: `0x${string}`;
   signature: `0x${string}`;
@@ -87,6 +89,7 @@ const getCidFromIpfs = (value?: string | null) => {
 export default function MyBadgesPage() {
   const { language } = useLanguage();
   const languageDic = myBadgesContent[language];
+  const globalDic = global[language];
   const locale = language === "zh" ? "zh-CN" : "en-US";
 
   const [badges, setBadges] = useState<BadgeRecordResponse[]>([]);
@@ -168,9 +171,15 @@ export default function MyBadgesPage() {
   }, []);
 
   const loadBadges = useCallback(async () => {
+    if (!address) {
+      setBadges([]);
+      return;
+    }
     setLoading(true);
     try {
-      const response = await fetch("/api/badges");
+      const response = await fetch(
+        `/api/badges?userId=${encodeURIComponent(address)}`
+      );
       if (!response.ok) {
         throw new Error("Failed to load badges");
       }
@@ -182,7 +191,7 @@ export default function MyBadgesPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [address]);
 
   // Receipt is for on-chain success/revert status only;
   // errors here indicate receipt polling failures (RPC, timeout, replaced tx), not contract reverts.
@@ -240,13 +249,70 @@ export default function MyBadgesPage() {
       void resolveRevert();
       return;
     }
-    setMintFeedback({
-      type: "success",
-      message: languageDic.mintFeedback.success,
-    });
-    clearMintContext();
-    setMintTxHash(undefined);
-    void loadBadges();
+    const finalizeMint = async () => {
+      const badgeId = mintContext?.badgeId;
+      const mintedTokenId = (() => {
+        if (!mintContext) return undefined;
+        try {
+          const logs = parseEventLogs({
+            abi: badgeNftAbi,
+            logs: mintReceipt.logs,
+            eventName: "BadgeMinted",
+            strict: false,
+          });
+          const account = mintContext.account.toLowerCase();
+          const fingerprint = mintContext.fingerprint.toLowerCase();
+          const match = logs.find((log) => {
+            const to = log.args?.to;
+            const logFingerprint = log.args?.fingerprint;
+            if (!to || !logFingerprint) return false;
+            return (
+              to.toLowerCase() === account &&
+              logFingerprint.toLowerCase() === fingerprint
+            );
+          });
+          const tokenId = match?.args?.tokenId;
+          return typeof tokenId === "bigint" ? tokenId.toString() : undefined;
+        } catch (error) {
+          console.warn("Failed to parse BadgeMinted event", error);
+          return undefined;
+        }
+      })();
+
+      if (!mintedTokenId) {
+        console.warn("Minted tokenId not found in receipt logs.");
+      }
+
+      const userId = mintContext?.account;
+      if (badgeId && userId) {
+        try {
+          const response = await fetch(`/api/badges/${badgeId}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              status: BadgeRecordStatus.Minted,
+              tokenId: mintedTokenId,
+              userId,
+            }),
+          });
+          if (!response.ok) {
+            console.error("Failed to update badge status");
+          }
+        } catch (error) {
+          console.error("Failed to update badge status", error);
+        }
+      }
+
+      setMintFeedback({
+        type: "success",
+        message: languageDic.mintFeedback.success,
+      });
+      clearMintContext();
+      setMintTxHash(undefined);
+      void loadBadges();
+    };
+
+    void finalizeMint();
   }, [
     mintReceipt,
     mintTxHash,
@@ -287,12 +353,7 @@ export default function MyBadgesPage() {
         month: "short",
         day: "numeric",
       });
-      const status =
-        badge.status === "MINTED"
-          ? "minted"
-          : badge.status === "SAVED"
-          ? "saved"
-          : "draft";
+      const status = badge.status.toLowerCase() as BadgeStatus;
       const tokenUri =
         typeof badge.tokenUri === "string"
           ? badge.tokenUri
@@ -314,6 +375,7 @@ export default function MyBadgesPage() {
         status,
         theme: theme || "-",
         updated,
+        tokenId: typeof badge.tokenId === "string" ? badge.tokenId : undefined,
         tokenURI,
         imageCid: imageCid ?? undefined,
         imageUrl,
@@ -324,8 +386,12 @@ export default function MyBadgesPage() {
   }, [badges, language, locale]);
 
   const badgeStats = useMemo(() => {
-    const saved = badges.filter((badge) => badge.status === "SAVED").length;
-    const minted = badges.filter((badge) => badge.status === "MINTED").length;
+    const saved = badges.filter(
+      (badge) => badge.status === BadgeRecordStatus.Saved
+    ).length;
+    const minted = badges.filter(
+      (badge) => badge.status === BadgeRecordStatus.Minted
+    ).length;
     return { saved, minted };
   }, [badges]);
 
@@ -407,6 +473,7 @@ export default function MyBadgesPage() {
       }
 
       setMintContext({
+        badgeId: badge.id,
         contractAddress,
         fingerprint,
         signature,
@@ -439,16 +506,14 @@ export default function MyBadgesPage() {
       <AlertDialog open={showConnectAlert} onOpenChange={setShowConnectAlert}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>
-              {languageDic.connectAlert.title}
-            </AlertDialogTitle>
+            <AlertDialogTitle>{globalDic.connectAlert.title}</AlertDialogTitle>
             <AlertDialogDescription>
-              {languageDic.connectAlert.description}
+              {globalDic.connectAlert.description}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogAction>
-              {languageDic.connectAlert.action}
+              {globalDic.connectAlert.action}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -615,7 +680,7 @@ export default function MyBadgesPage() {
                         {languageDic.cardLabels.tokenId}
                       </p>
                       <p className="mt-1 text-sm font-semibold text-slate-900">
-                        {badge.tokenId} -{" "}
+                        {`#${badge.tokenId}`} -{" "}
                         {badge.price ?? languageDic.actions.notListed}
                       </p>
                     </div>

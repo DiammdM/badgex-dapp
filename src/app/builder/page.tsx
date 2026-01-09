@@ -17,9 +17,19 @@ import {
   type BadgeThemeId,
   type BadgeIconId,
 } from "@src/types/badge-options";
-import { builderContent } from "../i18n";
+import { builderContent, global } from "../i18n";
 import { BadgePropertyNames } from "@src/types/badge";
 import { BadgeApiPayload } from "@src/types/badge";
+import { useConnection } from "wagmi";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@src/components/ui/alert-dialog";
 
 const PREVIEW_SIZE = 512;
 
@@ -61,7 +71,8 @@ const getTextSize = (text: string) => {
 
 export default function BuilderPage() {
   const { language } = useLanguage();
-  const copy = builderContent[language];
+  const languageDic = builderContent[language];
+  const globalDic = global[language];
   const [badgeName, setBadgeName] = useState("");
   const [description, setDescription] = useState("");
   const [badgeText, setBadgeText] = useState("");
@@ -127,10 +138,10 @@ export default function BuilderPage() {
     selectedCategory?.englishLabel ?? categoryOptions[0].englishLabel;
   const selectedShapeLabel = selectedShape?.label ?? shapeOptions[0].label;
   const selectedThemeEnglishLabel = selectedTheme?.englishLabel ?? "";
-  const displayText = badgeText.trim().slice(0, 10) || copy.previewText;
-  const displayName = badgeName.trim() || copy.metadataPreview.name;
+  const displayText = badgeText.trim().slice(0, 10) || languageDic.previewText;
+  const displayName = badgeName.trim() || languageDic.metadataPreview.name;
   const displayDescription =
-    description.trim() || copy.metadataPreview.description;
+    description.trim() || languageDic.metadataPreview.description;
   const textSize = getTextSize(displayText);
   const Icon = selectedIcon?.Icon ?? null;
   const iconSize = 96;
@@ -157,21 +168,31 @@ export default function BuilderPage() {
 
   const metadataJson = JSON.stringify(metadataPreview, null, 2);
 
-  // generate params
-  const params: BadgeApiPayload = {
-    name: displayName,
-    description: displayDescription,
-    config: {
-      [BadgePropertyNames.Theme]: selectedTheme.id,
-      [BadgePropertyNames.Shape]: selectedShapeId,
-      [BadgePropertyNames.Border]: selectedBorderId,
-      [BadgePropertyNames.Icon]: selectedIcon.id,
-      [BadgePropertyNames.Text]: displayText,
-      [BadgePropertyNames.Category]: selectedCategoryEnglish,
-    },
-  };
+  const { isConnected, address } = useConnection();
+  const [showConnectAlert, setShowConnectAlert] = useState(false);
 
   const handleSave = async () => {
+    // check the login status
+    if (!isConnected || !address) {
+      setShowConnectAlert(true);
+      return;
+    }
+
+    // generate params
+    const params: BadgeApiPayload = {
+      userId: address,
+      name: displayName,
+      description: displayDescription,
+      config: {
+        [BadgePropertyNames.Theme]: selectedTheme.id,
+        [BadgePropertyNames.Shape]: selectedShapeId,
+        [BadgePropertyNames.Border]: selectedBorderId,
+        [BadgePropertyNames.Icon]: selectedIcon.id,
+        [BadgePropertyNames.Text]: displayText,
+        [BadgePropertyNames.Category]: selectedCategoryEnglish,
+      },
+    };
+
     if (saveStatus === "saving") return;
     setSaveStatus("saving");
     try {
@@ -209,23 +230,38 @@ export default function BuilderPage() {
 
   return (
     <div className="space-y-10">
+      <AlertDialog open={showConnectAlert} onOpenChange={setShowConnectAlert}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{globalDic.connectAlert.title}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {globalDic.connectAlert.description}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction>
+              {globalDic.connectAlert.action}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       <section className="flex animate-[fade-in-up_0.6s_ease-out_both] flex-wrap items-end justify-between gap-6">
         <div className="space-y-3">
           <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">
-            {copy.label}
+            {languageDic.label}
           </p>
           <h1 className="text-3xl font-[var(--font-display)] text-slate-900 sm:text-4xl">
-            {copy.title}
+            {languageDic.title}
           </h1>
           <p className="max-w-2xl text-base leading-7 text-slate-600">
-            {copy.description}
+            {languageDic.description}
           </p>
           <div className="flex flex-wrap gap-3 text-xs font-semibold uppercase tracking-[0.26em] text-slate-500">
             <span className="rounded-full border border-slate-900/10 bg-white/70 px-3 py-1">
-              {copy.statusDraft}
+              {languageDic.statusDraft}
             </span>
             <span className="rounded-full border border-slate-900/10 bg-white/70 px-3 py-1">
-              {copy.statusLocal}
+              {languageDic.statusLocal}
             </span>
           </div>
         </div>
@@ -236,7 +272,7 @@ export default function BuilderPage() {
               onClick={handleReset}
               type="button"
             >
-              {copy.reset}
+              {languageDic.reset}
             </button>
             <button
               className="rounded-full bg-slate-900 px-5 py-2 text-sm font-semibold text-amber-50 shadow-lg shadow-slate-900/20 transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
@@ -244,12 +280,14 @@ export default function BuilderPage() {
               onClick={handleSave}
               type="button"
             >
-              {saveStatus === "saving" ? copy.saveSaving : copy.saveToIpfs}
+              {saveStatus === "saving"
+                ? languageDic.saveSaving
+                : languageDic.saveToIpfs}
             </button>
           </div>
           {saveStatus !== "idle" ? (
             <p className="text-xs text-slate-500">
-              {copy.saveStatus[saveStatus]}
+              {languageDic.saveStatus[saveStatus]}
             </p>
           ) : null}
         </div>
@@ -261,36 +299,36 @@ export default function BuilderPage() {
       >
         <div className="rounded-[28px] border border-slate-900/10 bg-white/75 p-6 shadow-lg shadow-slate-900/5">
           <h2 className="text-lg font-semibold text-slate-900">
-            {copy.configTitle}
+            {languageDic.configTitle}
           </h2>
           <div className="mt-6 space-y-5">
             <div>
               <label className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">
-                {copy.badgeName}
+                {languageDic.badgeName}
               </label>
               <input
                 className="mt-2 w-full rounded-2xl border border-slate-900/10 bg-white px-4 py-3 text-sm text-slate-800 focus:border-slate-900/40 focus:outline-none"
                 onChange={(event) => setBadgeName(event.target.value)}
-                placeholder={copy.badgeNamePlaceholder}
+                placeholder={languageDic.badgeNamePlaceholder}
                 type="text"
                 value={badgeName}
               />
             </div>
             <div>
               <label className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">
-                {copy.descriptionLabel}
+                {languageDic.descriptionLabel}
               </label>
               <textarea
                 className="mt-2 w-full rounded-2xl border border-slate-900/10 bg-white px-4 py-3 text-sm text-slate-800 focus:border-slate-900/40 focus:outline-none"
                 onChange={(event) => setDescription(event.target.value)}
-                placeholder={copy.descriptionPlaceholder}
+                placeholder={languageDic.descriptionPlaceholder}
                 rows={3}
                 value={description}
               />
             </div>
             <div>
               <label className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">
-                {copy.category}
+                {languageDic.category}
               </label>
               <select
                 className="mt-2 w-full rounded-2xl border border-slate-900/10 bg-white px-4 py-3 text-sm text-slate-800 focus:border-slate-900/40 focus:outline-none"
@@ -308,7 +346,7 @@ export default function BuilderPage() {
             </div>
             <div>
               <label className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">
-                {copy.theme}
+                {languageDic.theme}
               </label>
               <div className="mt-3 grid gap-3 sm:grid-cols-3">
                 {themeOptions.map((theme) => (
@@ -333,7 +371,7 @@ export default function BuilderPage() {
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
                 <label className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">
-                  {copy.shape}
+                  {languageDic.shape}
                 </label>
                 <div className="mt-3 flex flex-wrap gap-2">
                   {shapeOptions.map((shape) => (
@@ -354,7 +392,7 @@ export default function BuilderPage() {
               </div>
               <div>
                 <label className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">
-                  {copy.border}
+                  {languageDic.border}
                 </label>
                 <div className="mt-3 flex flex-wrap gap-2">
                   {borderOptions.map((border) => (
@@ -377,7 +415,7 @@ export default function BuilderPage() {
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
                 <label className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">
-                  {copy.icon}
+                  {languageDic.icon}
                 </label>
                 <div className="mt-3 grid grid-cols-2 gap-2">
                   {iconOptions.map((icon) => {
@@ -406,13 +444,13 @@ export default function BuilderPage() {
               </div>
               <div>
                 <label className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">
-                  {copy.text}
+                  {languageDic.text}
                 </label>
                 <input
                   className="mt-2 w-full rounded-2xl border border-slate-900/10 bg-white px-4 py-3 text-sm text-slate-800 focus:border-slate-900/40 focus:outline-none"
                   maxLength={10}
                   onChange={(event) => setBadgeText(event.target.value)}
-                  placeholder={copy.textPlaceholder}
+                  placeholder={languageDic.textPlaceholder}
                   type="text"
                   value={badgeText}
                 />
@@ -424,9 +462,9 @@ export default function BuilderPage() {
         <div className="space-y-6">
           <div className="rounded-[28px] border border-slate-900/10 bg-white/80 p-6 shadow-lg shadow-slate-900/5">
             <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">
-              <span>{copy.previewTitle}</span>
+              <span>{languageDic.previewTitle}</span>
               <span className="rounded-full border border-slate-900/10 px-3 py-1 text-[10px]">
-                {copy.previewPill}
+                {languageDic.previewPill}
               </span>
             </div>
             <div
@@ -507,7 +545,7 @@ export default function BuilderPage() {
             <div className="mt-6 grid gap-4 sm:grid-cols-2">
               <div className="rounded-2xl border border-slate-900/10 bg-slate-50/80 p-4 text-sm">
                 <p className="text-xs uppercase tracking-[0.3em] text-slate-500">
-                  {copy.summary.theme}
+                  {languageDic.summary.theme}
                 </p>
                 <p className="mt-2 font-semibold text-slate-900">
                   {selectedTheme?.label}
@@ -515,7 +553,7 @@ export default function BuilderPage() {
               </div>
               <div className="rounded-2xl border border-slate-900/10 bg-slate-50/80 p-4 text-sm">
                 <p className="text-xs uppercase tracking-[0.3em] text-slate-500">
-                  {copy.summary.shape}
+                  {languageDic.summary.shape}
                 </p>
                 <p className="mt-2 font-semibold text-slate-900">
                   {selectedShapeLabel}
@@ -523,7 +561,7 @@ export default function BuilderPage() {
               </div>
               <div className="rounded-2xl border border-slate-900/10 bg-slate-50/80 p-4 text-sm">
                 <p className="text-xs uppercase tracking-[0.3em] text-slate-500">
-                  {copy.summary.text}
+                  {languageDic.summary.text}
                 </p>
                 <p className="mt-2 font-semibold text-slate-900">
                   {displayText}
@@ -531,7 +569,7 @@ export default function BuilderPage() {
               </div>
               <div className="rounded-2xl border border-slate-900/10 bg-slate-50/80 p-4 text-sm sm:col-span-2">
                 <p className="text-xs uppercase tracking-[0.3em] text-slate-500">
-                  {copy.summary.category}
+                  {languageDic.summary.category}
                 </p>
                 <p className="mt-2 font-semibold text-slate-900">
                   {selectedCategoryLabel}
@@ -542,36 +580,36 @@ export default function BuilderPage() {
 
           <div className="rounded-[28px] border border-slate-900/10 bg-white/80 p-6">
             <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">
-              <span>{copy.metadataTitle}</span>
+              <span>{languageDic.metadataTitle}</span>
               <span className="rounded-full border border-slate-900/10 px-3 py-1 text-[10px]">
-                {copy.metadataPill}
+                {languageDic.metadataPill}
               </span>
             </div>
             <pre className="mt-5 max-h-56 overflow-auto rounded-2xl bg-slate-900 p-4 text-xs leading-6 text-amber-100/90">
               {metadataJson}
             </pre>
             <div className="mt-4 rounded-2xl border border-dashed border-slate-300 bg-slate-50/80 p-4 text-xs text-slate-600">
-              {copy.metadataNote}
+              {languageDic.metadataNote}
             </div>
           </div>
 
           <div className="rounded-[28px] border border-slate-900/10 bg-white/80 p-6">
             <h3 className="text-lg font-semibold text-slate-900">
-              {copy.afterSaveTitle}
+              {languageDic.afterSaveTitle}
             </h3>
             <ul className="mt-4 space-y-3 text-sm text-slate-600">
-              {copy.afterSaveSteps.map((step) => (
+              {languageDic.afterSaveSteps.map((step) => (
                 <li key={step}>{step}</li>
               ))}
             </ul>
             <div className="mt-5 rounded-2xl border border-dashed border-amber-300 bg-amber-50/80 p-4 text-xs text-amber-900">
-              {copy.afterSaveNote}
+              {languageDic.afterSaveNote}
             </div>
             <Link
               className="mt-6 inline-flex items-center text-sm font-semibold text-slate-900"
               href="/my-badges"
             >
-              {copy.afterSaveCta}
+              {languageDic.afterSaveCta}
             </Link>
           </div>
         </div>

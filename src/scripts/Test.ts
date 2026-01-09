@@ -19,10 +19,6 @@ export function buildFingerprint(attributes: MetaAttribute[]): string {
 function main() {
   const attributes: MetaAttribute[] = [
     {
-      trait_type: BadgePropertyNames.Level,
-      value: 3,
-    },
-    {
       trait_type: BadgePropertyNames.Category,
       value: "Builder",
     },

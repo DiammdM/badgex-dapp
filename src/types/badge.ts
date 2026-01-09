@@ -9,6 +9,12 @@ export enum BadgePropertyNames {
 
 export const BADGE_TRAITS = Object.values(BadgePropertyNames);
 
+export enum BadgeRecordStatus {
+  Draft = "DRAFT",
+  Saved = "SAVED",
+  Minted = "MINTED",
+}
+
 export type BadgeTraitType = BadgePropertyNames;
 
 export type BadgeConfig = {
@@ -16,6 +22,7 @@ export type BadgeConfig = {
 };
 
 export type BadgeApiPayload = {
+  userId: `0x${string}` | undefined;
   name: string;
   description: string;
   config: BadgeConfig;
@@ -24,18 +31,19 @@ export type BadgeApiPayload = {
 export type BadgeListItem = {
   id: string;
   name: string;
-  status: string;
+  status: BadgeRecordStatus;
   config: unknown;
   imageCid: string | null;
   metadataCid: string | null;
   tokenUri: string | null;
+  tokenId: string | null;
   ipfsUrl: string | null;
   updatedAt: string;
   imageUrl: string | null;
 };
 
 export type CreateBadgeInput = {
-  userId: string;
+  userId: `0x${string}` | undefined;
   name: string;
   description?: string;
   config: BadgeConfig;

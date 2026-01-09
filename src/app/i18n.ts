@@ -577,11 +577,6 @@ export const myBadgesContent = {
       delete: "Delete",
       notListed: "Not listed",
     },
-    connectAlert: {
-      title: "Connect your wallet",
-      description: "Please connect your wallet before minting this badge.",
-      action: "Got it",
-    },
     mintFeedback: {
       success: "Mint succeeded",
       error: "Mint failed",
@@ -683,11 +678,6 @@ export const myBadgesContent = {
       view: "查看详情",
       delete: "删除",
       notListed: "未上架",
-    },
-    connectAlert: {
-      title: "请先连接钱包",
-      description: "铸造徽章前请先连接钱包。",
-      action: "知道了",
     },
     mintFeedback: {
       success: "铸造成功",
@@ -1090,3 +1080,20 @@ export const badgeDetailContent = {
     },
   },
 };
+
+export const global = {
+  en: {
+    connectAlert: {
+      title: "Connect your wallet",
+      description: "Please connect your wallet before handling",
+      action: "Got it",
+    },
+  },
+  zh: {
+    connectAlert: {
+      title: "请先连接钱包",
+      description: "操作前请先连接钱包。",
+      action: "知道了",
+    },
+  },
+} as const;

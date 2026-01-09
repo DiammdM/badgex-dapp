@@ -3,13 +3,18 @@ import { createBadgeForUser, listBadgesForUser } from "@src/server/badges";
 import { BadgeApiPayload } from "@src/types/badge";
 import { parseJson } from "@src/utils/request";
 
-const FIXED_USER_ID = "user_demo_001";
-
 export const runtime = "nodejs";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const badges = await listBadgesForUser(FIXED_USER_ID);
+    const { searchParams } = new URL(request.url);
+    const userId = searchParams.get("userId");
+
+    if (!userId) {
+      return NextResponse.json({ error: "Missing userId" }, { status: 400 });
+    }
+
+    const badges = await listBadgesForUser(userId);
     return NextResponse.json({ badges });
   } catch (error) {
     console.error("Failed to load badges", error);
@@ -26,13 +31,14 @@ export async function POST(request: Request) {
     const name = body.name.trim();
     const description = body.description.trim();
     const config = body.config;
+    const userId = body.userId;
 
     if (!name || !config || typeof config !== "object") {
       return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
     }
 
     const result = await createBadgeForUser({
-      userId: FIXED_USER_ID,
+      userId,
       name,
       description,
       config: config,

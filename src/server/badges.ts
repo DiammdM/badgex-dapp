@@ -4,6 +4,7 @@ import { prisma } from "@src/lib/prisma";
 import {
   BadgeConfig,
   BadgeListItem,
+  BadgeRecordStatus,
   CreateBadgeInput,
   Metadata,
   MetaAttribute,
@@ -75,6 +76,7 @@ export const listBadgesForUser = async (
       imageCid: true,
       metadataCid: true,
       tokenUri: true,
+      tokenId: true,
       ipfsUrl: true,
       updatedAt: true,
     },
@@ -87,6 +89,7 @@ export const listBadgesForUser = async (
     const imageUrl = imageCid && prefix ? `${prefix}${imageCid}` : null;
     return {
       ...record,
+      status: record.status as BadgeRecordStatus,
       updatedAt: record.updatedAt.toISOString(),
       imageUrl,
     };
@@ -107,11 +110,11 @@ export const createBadgeForUser = async ({
 
   const record = await prisma.badgeRecord.create({
     data: {
-      userId,
+      userId: userId as string,
       name,
       description: description || null,
       config,
-      status: "SAVED",
+      status: BadgeRecordStatus.Saved,
       imageCid,
       metadataCid,
       tokenUri,
@@ -127,4 +130,28 @@ export const createBadgeForUser = async ({
     tokenUri,
     ipfsUrl,
   };
+};
+
+export const updateBadgeStatusForUser = async ({
+  userId,
+  badgeId,
+  status,
+  tokenId,
+}: {
+  userId: string;
+  badgeId: string;
+  status: BadgeRecordStatus;
+  tokenId?: string;
+}) => {
+  const data: { status: BadgeRecordStatus; tokenId?: string } = { status };
+  if (tokenId) {
+    data.tokenId = tokenId;
+  }
+  return prisma.badgeRecord.updateMany({
+    where: {
+      id: badgeId,
+      userId,
+    },
+    data,
+  });
 };
