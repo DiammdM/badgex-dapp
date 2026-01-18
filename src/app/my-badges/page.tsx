@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLanguage } from "@src/components/LanguageProvider";
@@ -10,68 +9,41 @@ import {
   usePublicClient,
   useWaitForTransactionReceipt,
 } from "wagmi";
-import { BaseError, ContractFunctionRevertedError, parseEventLogs } from "viem";
-import { badgeNftAbi, useWriteBadgeNftMintBadge } from "@src/generated/wagmi";
+import {
+  BaseError,
+  ContractFunctionRevertedError,
+  parseEther,
+  parseEventLogs,
+} from "viem";
+import {
+  badgeNftAbi,
+  marketplaceAbi,
+  useWriteBadgeNftMintBadge,
+  useWriteBadgeNftSetApprovalForAll,
+  useWriteMarketplaceList,
+  useWriteMarketplaceCancel,
+} from "@src/generated/wagmi";
 import { BadgeRecordStatus, type BadgeConfig } from "@src/types/badge";
 import { BADGE_THEME_OPTIONS } from "@src/types/badge-options";
 import {
   AlertDialog,
   AlertDialogAction,
+  AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@src/components/ui/alert-dialog";
-
-type BadgeRecordResponse = {
-  id: string;
-  name: string;
-  status: BadgeRecordStatus;
-  config?: Partial<BadgeConfig> | null;
-  imageCid?: string | null;
-  imageUrl?: string | null;
-  metadataCid?: string | null;
-  tokenUri?: string | null;
-  tokenId?: string | null;
-  ipfsUrl?: string | null;
-  updatedAt: string;
-};
-
-type BadgeStatus = Lowercase<BadgeRecordStatus>;
-
-type BadgeListItem = {
-  id: string;
-  name: string;
-  status: BadgeStatus;
-  theme: string;
-  updated: string;
-  tokenURI?: string;
-  imageCid?: string;
-  imageUrl?: string;
-  metadataCid?: string;
-  config?: Partial<BadgeConfig> | null;
-  tokenId?: string;
-  price?: string;
-  listed?: boolean;
-  listingId?: string;
-};
-
-type MintContext = {
-  badgeId: string;
-  contractAddress: `0x${string}`;
-  fingerprint: `0x${string}`;
-  signature: `0x${string}`;
-  tokenUri: string;
-  account: `0x${string}`;
-  value?: bigint;
-};
-
-const statusStyles: Record<BadgeStatus, string> = {
-  draft: "bg-amber-100 text-amber-900",
-  saved: "bg-emerald-100 text-emerald-900",
-  minted: "bg-slate-900 text-amber-100",
-};
+import { BadgeLibrarySection } from "./BadgeLibrarySection";
+import {
+  type BadgeListItem,
+  type BadgeStatus,
+  type BadgeRecordResponse,
+  type MintContext,
+  type ListingContext,
+  type CancelContext,
+} from "./types";
 
 const getCidFromIpfs = (value?: string | null) => {
   if (!value) return undefined;
@@ -86,6 +58,12 @@ const getCidFromIpfs = (value?: string | null) => {
   return undefined;
 };
 
+const BADGE_NFT_ADDRESS = process.env
+  .NEXT_PUBLIC_BADGE_NFT_ADDRESS as `0x${string}`;
+
+const BADGE_MARKETPLACE_ADDRESS = process.env
+  .NEXT_PUBLIC_BADGE_MARKETPLACE_ADDRESS as `0x${string}`;
+
 export default function MyBadgesPage() {
   const { language } = useLanguage();
   const languageDic = myBadgesContent[language];
@@ -99,18 +77,94 @@ export default function MyBadgesPage() {
     type: "success" | "error";
     message: string;
   } | null>(null);
+  const [cancelError, setCancelError] = useState<string | null>(null);
   const [mintContext, setMintContext] = useState<MintContext | null>(null);
   const [mintTxHash, setMintTxHash] = useState<`0x${string}` | undefined>(
     undefined
   );
-
+  const [listingTxHash, setListingTxHash] = useState<`0x${string}` | undefined>(
+    undefined
+  );
+  const [listingContext, setListingContext] = useState<ListingContext | null>(
+    null
+  );
+  const [cancelContext, setCancelContext] = useState<CancelContext | null>(
+    null
+  );
+  const [isApproving, setIsApproving] = useState(false);
+  const [cancelTxHash, setCancelTxHash] = useState<`0x${string}` | undefined>();
+  const [listingDialog, setListingDialog] = useState<{
+    open: boolean;
+    badge: BadgeListItem | null;
+    price: string;
+    error?: string;
+  }>({
+    open: false,
+    badge: null,
+    price: "",
+  });
   const { isConnected, address, chainId } = useConnection();
   const publicClient = usePublicClient();
   const { mutateAsync: mintBadgeAsync, isPending: isMinting } =
     useWriteBadgeNftMintBadge();
+  const { mutateAsync: listBadgeAsync, isPending: isListing } =
+    useWriteMarketplaceList();
+  const { mutateAsync: cancelListingAsync, isPending: isCancelingTx } =
+    useWriteMarketplaceCancel();
+  const { mutateAsync: approveMarketplaceAsync } =
+    useWriteBadgeNftSetApprovalForAll();
+  const [cancelingId, setCancelingId] = useState<string | null>(null);
+  const isCanceling = isCancelingTx || cancelingId !== null;
+  const isListingBusy =
+    isListing || isApproving || !!listingTxHash || isCanceling;
+
+  const loadBadges = useCallback(async () => {
+    if (!address) {
+      setBadges([]);
+      return;
+    }
+    setLoading(true);
+    try {
+      const response = await fetch(
+        `/api/badges?userId=${encodeURIComponent(address)}`
+      );
+      if (!response.ok) {
+        throw new Error("Failed to load badges");
+      }
+      const data = await response.json();
+      setBadges(Array.isArray(data?.badges) ? data.badges : []);
+    } catch (error) {
+      console.error(error);
+      setBadges([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [address]);
+
+  const resolveMarketErrorMessage = useCallback(
+    (error: unknown) => {
+      if (error instanceof BaseError) {
+        const reverted = error.walk(
+          (err) => err instanceof ContractFunctionRevertedError
+        ) as ContractFunctionRevertedError | null;
+        const errorName = reverted?.data?.errorName;
+        if (errorName) {
+          const map = languageDic.marketplaceErrors;
+          if (errorName in map) {
+            return map[errorName as keyof typeof map];
+          }
+          return errorName;
+        }
+        return error.shortMessage || error.message;
+      }
+      if (error instanceof Error && error.message) {
+        return error.message;
+      }
+    },
+    [languageDic.marketplaceErrors]
+  );
   const resolveMintErrorMessage = useCallback(
     (error: unknown) => {
-      debugger;
       const fallback = languageDic.mintFeedback.error;
       if (error instanceof BaseError) {
         const rejected = error.walk(
@@ -170,33 +224,132 @@ export default function MyBadgesPage() {
     setMintContext(null);
   }, []);
 
-  const loadBadges = useCallback(async () => {
-    if (!address) {
-      setBadges([]);
-      return;
-    }
-    setLoading(true);
-    try {
-      const response = await fetch(
-        `/api/badges?userId=${encodeURIComponent(address)}`
-      );
-      if (!response.ok) {
-        throw new Error("Failed to load badges");
+  const resetListingDialog = useCallback(() => {
+    setListingDialog({ open: false, badge: null, price: "", error: undefined });
+  }, []);
+
+  const handleCanceledListing = useCallback(
+    async ({
+      badgeId,
+      account,
+    }: {
+      badgeId?: string;
+      account?: `0x${string}`;
+    }) => {
+      const userId = account ?? address;
+      if (badgeId && userId) {
+        try {
+          const response = await fetch(`/api/badges/${badgeId}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              status: BadgeRecordStatus.Minted,
+              userId,
+              listingId: null,
+              price: null,
+            }),
+          });
+          if (!response.ok) {
+            console.error("Failed to update badge after cancel");
+          }
+        } catch (error) {
+          console.error("Failed to update badge after cancel", error);
+        }
       }
-      const data = await response.json();
-      setBadges(Array.isArray(data?.badges) ? data.badges : []);
-    } catch (error) {
-      console.error(error);
-      setBadges([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [address]);
+
+      void loadBadges();
+    },
+    [address, loadBadges]
+  );
+
+  const finalizeMintFromEvent = useCallback(
+    async (tokenId: string, tokenUri: string) => {
+      try {
+        const response = await fetch(`/api/badges/by-token-uri`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            status: BadgeRecordStatus.Minted,
+            tokenId,
+            tokenUri,
+          }),
+        });
+        if (!response.ok) {
+          console.error("Failed to update badge status");
+        }
+      } catch (error) {
+        console.error("Failed to update badge status", error);
+      }
+
+      setMintFeedback({
+        type: "success",
+        message: languageDic.mintFeedback.success,
+      });
+      clearMintContext();
+      setMintTxHash(undefined);
+      void loadBadges();
+    },
+    [languageDic.mintFeedback.success, clearMintContext, loadBadges]
+  );
+
+  const openListingDialog = useCallback((badge: BadgeListItem) => {
+    const normalizedPrice =
+      typeof badge.price === "string"
+        ? badge.price.replace(/\s*eth$/i, "").trim()
+        : "";
+    setListingDialog({
+      open: true,
+      badge,
+      price: normalizedPrice,
+      error: undefined,
+    });
+  }, []);
 
   // Receipt is for on-chain success/revert status only;
   // errors here indicate receipt polling failures (RPC, timeout, replaced tx), not contract reverts.
   const { data: mintReceipt, error: mintReceiptError } =
     useWaitForTransactionReceipt({ hash: mintTxHash });
+  const { data: listingReceipt, error: listingReceiptError } =
+    useWaitForTransactionReceipt({ hash: listingTxHash });
+  const { data: cancelReceipt, error: cancelReceiptError } =
+    useWaitForTransactionReceipt({ hash: cancelTxHash });
+
+  const finalizeListingStatus = useCallback(
+    async ({
+      badgeId,
+      account,
+      price,
+      listingId,
+    }: {
+      badgeId: string;
+      account: string;
+      price: string;
+      listingId: string;
+    }) => {
+      try {
+        const response = await fetch(`/api/badges/${badgeId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            status: BadgeRecordStatus.Listed,
+            userId: account,
+            price,
+            listingId,
+          }),
+        });
+        if (!response.ok) {
+          console.error("Failed to update listing status");
+        }
+      } catch (error) {
+        console.error("Failed to update listing status", error);
+      }
+
+      setListingContext(null);
+      setListingTxHash(undefined);
+      void loadBadges();
+    },
+    [loadBadges]
+  );
 
   useEffect(() => {
     if (!mintReceipt || !mintTxHash) return;
@@ -249,80 +402,47 @@ export default function MyBadgesPage() {
       void resolveRevert();
       return;
     }
-    const finalizeMint = async () => {
-      const badgeId = mintContext?.badgeId;
-      const mintedTokenId = (() => {
-        if (!mintContext) return undefined;
-        try {
-          const logs = parseEventLogs({
-            abi: badgeNftAbi,
-            logs: mintReceipt.logs,
-            eventName: "BadgeMinted",
-            strict: false,
-          });
-          const account = mintContext.account.toLowerCase();
-          const fingerprint = mintContext.fingerprint.toLowerCase();
-          const match = logs.find((log) => {
-            const to = log.args?.to;
-            const logFingerprint = log.args?.fingerprint;
-            if (!to || !logFingerprint) return false;
-            return (
-              to.toLowerCase() === account &&
-              logFingerprint.toLowerCase() === fingerprint
-            );
-          });
-          const tokenId = match?.args?.tokenId;
-          return typeof tokenId === "bigint" ? tokenId.toString() : undefined;
-        } catch (error) {
-          console.warn("Failed to parse BadgeMinted event", error);
-          return undefined;
-        }
-      })();
 
-      if (!mintedTokenId) {
-        console.warn("Minted tokenId not found in receipt logs.");
+    if (mintReceipt.status !== "success") return;
+
+    const finalizeFromReceipt = async () => {
+      try {
+        const logs = parseEventLogs({
+          abi: badgeNftAbi,
+          logs: mintReceipt.logs,
+          eventName: "BadgeMinted",
+          strict: false,
+        });
+
+        const log = logs[0];
+        const tokenId = log?.args?.tokenId?.toString();
+        const tokenUri = log?.args?.tokenURI;
+        if (!tokenUri || !tokenId) {
+          throw new Error("Missing tokenUri or userId from BadgeMinted log");
+        }
+
+        await finalizeMintFromEvent(tokenId, tokenUri);
+        return;
+      } catch (error) {
+        console.warn("Failed to parse BadgeMinted event", error);
       }
 
-      const userId = mintContext?.account;
-      if (badgeId && userId) {
-        try {
-          const response = await fetch(`/api/badges/${badgeId}`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              status: BadgeRecordStatus.Minted,
-              tokenId: mintedTokenId,
-              userId,
-            }),
-          });
-          if (!response.ok) {
-            console.error("Failed to update badge status");
-          }
-        } catch (error) {
-          console.error("Failed to update badge status", error);
-        }
-      }
-
-      setMintFeedback({
-        type: "success",
-        message: languageDic.mintFeedback.success,
-      });
       clearMintContext();
       setMintTxHash(undefined);
-      void loadBadges();
     };
 
-    void finalizeMint();
+    void finalizeFromReceipt();
   }, [
     mintReceipt,
     mintTxHash,
-    languageDic.mintFeedback.success,
     languageDic.mintFeedback.error,
+    languageDic.mintFeedback.success,
     clearMintContext,
-    loadBadges,
     mintContext,
     publicClient,
     resolveMintErrorMessage,
+    finalizeMintFromEvent,
+    address,
   ]);
 
   useEffect(() => {
@@ -334,6 +454,173 @@ export default function MyBadgesPage() {
     clearMintContext();
     setMintTxHash(undefined);
   }, [mintReceiptError, mintTxHash, resolveMintErrorMessage, clearMintContext]);
+
+  useEffect(() => {
+    if (!listingReceipt || !listingTxHash || !listingContext) return;
+    if (listingReceipt.status === "reverted") {
+      const resolveRevert = async () => {
+        let message = languageDic.listingDialog.txError as string;
+        try {
+          if (!publicClient) {
+            setListingDialog((prev) => ({
+              ...prev,
+              open: true,
+              error: message,
+            }));
+            setListingContext(null);
+            setListingTxHash(undefined);
+            return;
+          }
+
+          const tokenId = BigInt(listingContext.tokenId);
+          const priceInWei = parseEther(listingContext.price);
+          await publicClient.simulateContract({
+            address: BADGE_MARKETPLACE_ADDRESS,
+            abi: marketplaceAbi,
+            functionName: "list",
+            args: [BADGE_NFT_ADDRESS, tokenId, priceInWei],
+            account: listingContext.account,
+            blockNumber: listingReceipt.blockNumber,
+          });
+        } catch (error) {
+          const resolved = resolveMarketErrorMessage(error);
+          if (resolved) {
+            message = resolved;
+          }
+        }
+        setListingDialog((prev) => ({
+          ...prev,
+          open: true,
+          error: message,
+        }));
+        setListingContext(null);
+        setListingTxHash(undefined);
+        return;
+      };
+
+      void resolveRevert();
+      return;
+    }
+
+    if (listingReceipt.status !== "success") return;
+
+    const finalizeListing = async () => {
+      let listingId: string | undefined;
+      try {
+        const logs = parseEventLogs({
+          abi: marketplaceAbi,
+          logs: listingReceipt.logs,
+          eventName: "Listed",
+          strict: false,
+        });
+        listingId = logs[0]?.args?.listingId?.toString();
+      } catch (error) {
+        console.warn("Failed to parse listing logs", error);
+      }
+
+      await finalizeListingStatus({
+        badgeId: listingContext.badgeId,
+        account: listingContext.account,
+        price: listingContext.price,
+        listingId: listingId ?? listingContext.fallbackListingId,
+      });
+    };
+
+    void finalizeListing();
+  }, [
+    listingReceipt,
+    listingTxHash,
+    listingContext,
+    languageDic.listingDialog.txError,
+    publicClient,
+    resolveMarketErrorMessage,
+    finalizeListingStatus,
+    loadBadges,
+  ]);
+
+  useEffect(() => {
+    if (!cancelReceipt || !cancelTxHash || !cancelContext) return;
+    if (cancelReceipt.status === "reverted") {
+      const resolveRevert = async () => {
+        let message = languageDic.listingDialog.txError as string;
+        try {
+          if (publicClient) {
+            const listingId = BigInt(cancelContext.listingId);
+            await publicClient.simulateContract({
+              address: BADGE_MARKETPLACE_ADDRESS,
+              abi: marketplaceAbi,
+              functionName: "cancel",
+              args: [listingId],
+              account: cancelContext.account,
+              blockNumber: cancelReceipt.blockNumber,
+            });
+          }
+        } catch (error) {
+          const resolved = resolveMarketErrorMessage(error);
+          if (resolved) {
+            message = resolved;
+          }
+        }
+        setCancelError(message);
+        setCancelContext(null);
+        setCancelTxHash(undefined);
+        setCancelingId(null);
+      };
+
+      void resolveRevert();
+      return;
+    }
+
+    if (cancelReceipt.status !== "success") return;
+
+    const finalizeCancel = async () => {
+      await handleCanceledListing({
+        badgeId: cancelContext.badgeId,
+        account: cancelContext.account,
+      });
+
+      setCancelContext(null);
+      setCancelTxHash(undefined);
+      setCancelingId(null);
+    };
+
+    void finalizeCancel();
+  }, [
+    cancelReceipt,
+    cancelTxHash,
+    cancelContext,
+    languageDic.listingDialog.txError,
+    publicClient,
+    resolveMarketErrorMessage,
+    handleCanceledListing,
+  ]);
+
+  useEffect(() => {
+    if (!listingReceiptError || !listingTxHash) return;
+    setListingDialog((prev) => ({
+      ...prev,
+      open: true,
+      error: resolveMarketErrorMessage(listingReceiptError),
+    }));
+    setListingContext(null);
+    setListingTxHash(undefined);
+  }, [listingReceiptError, listingTxHash, resolveMarketErrorMessage]);
+
+  useEffect(() => {
+    if (!cancelReceiptError || !cancelTxHash) return;
+    setCancelError(
+      resolveMarketErrorMessage(cancelReceiptError) ??
+        languageDic.listingDialog.txError
+    );
+    setCancelContext(null);
+    setCancelTxHash(undefined);
+    setCancelingId(null);
+  }, [
+    cancelReceiptError,
+    cancelTxHash,
+    resolveMarketErrorMessage,
+    languageDic.listingDialog.txError,
+  ]);
 
   useEffect(() => {
     void loadBadges();
@@ -381,6 +668,8 @@ export default function MyBadgesPage() {
         imageUrl,
         metadataCid: metadataCid ?? undefined,
         config,
+        price: badge.price ?? undefined,
+        listingId: badge.listingId ?? undefined,
       };
     });
   }, [badges, language, locale]);
@@ -392,7 +681,10 @@ export default function MyBadgesPage() {
     const minted = badges.filter(
       (badge) => badge.status === BadgeRecordStatus.Minted
     ).length;
-    return { saved, minted };
+    const listed = badges.filter(
+      (badge) => badge.status === BadgeRecordStatus.Listed
+    ).length;
+    return { saved, minted, listed };
   }, [badges]);
 
   const mint = async (badge: BadgeListItem) => {
@@ -448,7 +740,6 @@ export default function MyBadgesPage() {
           if (typeof price === "bigint" && price > 0n) {
             mintValue = price;
           }
-          console.log(`read mint price: ${mintValue}`);
         } catch (error) {
           console.warn("Failed to read mint price", error);
         }
@@ -488,7 +779,6 @@ export default function MyBadgesPage() {
         args: [address, badge.tokenURI, fingerprint, signature],
         value: mintValue,
       });
-      console.log("mint tx hash:", txHash);
       setMintTxHash(txHash);
     } catch (error) {
       console.error("Failed to mint badge", error);
@@ -498,6 +788,199 @@ export default function MyBadgesPage() {
       });
       clearMintContext();
       setMintTxHash(undefined);
+    }
+  };
+
+  const list = (badge: BadgeListItem) => {
+    // check the login state
+    if (!isConnected || !address || !chainId) {
+      setShowConnectAlert(true);
+      return;
+    }
+
+    if (isListingBusy) return;
+
+    if (badge.status !== "minted") {
+      return;
+    }
+
+    openListingDialog(badge);
+  };
+
+  const cancel = async (badge: BadgeListItem) => {
+    if (!isConnected || !address || !chainId) {
+      setShowConnectAlert(true);
+      return;
+    }
+
+    if (isListingBusy) return;
+
+    if (!badge.listingId) {
+      console.error("Missing listingId for cancel.");
+      return;
+    }
+
+    if (!BADGE_MARKETPLACE_ADDRESS) {
+      console.error("Missing marketplace address for cancel.");
+      return;
+    }
+
+    const listingIdStr = badge.listingId.trim().replace(/^#/, "");
+    if (!listingIdStr || Number.isNaN(Number(listingIdStr))) {
+      console.error("Invalid listingId for cancel.");
+      return;
+    }
+
+    try {
+      setCancelingId(badge.id);
+      setCancelError(null);
+      const listingId = BigInt(listingIdStr);
+
+      if (publicClient) {
+        await publicClient.simulateContract({
+          address: BADGE_MARKETPLACE_ADDRESS,
+          abi: marketplaceAbi,
+          functionName: "cancel",
+          args: [listingId],
+          account: address,
+        });
+      }
+
+      const txHash = await cancelListingAsync({
+        address: BADGE_MARKETPLACE_ADDRESS,
+        abi: marketplaceAbi,
+        functionName: "cancel",
+        args: [listingId],
+        account: address,
+      });
+
+      setCancelContext({
+        listingId: listingIdStr,
+        account: address,
+        badgeId: badge.id,
+      });
+      setCancelTxHash(txHash);
+    } catch (error) {
+      console.error("Failed to cancel listing", error);
+      const message =
+        resolveMarketErrorMessage(error) ?? languageDic.listingDialog.txError;
+      setCancelError(message);
+      setCancelingId(null);
+    }
+  };
+
+  const confirmListing = async () => {
+    const badge = listingDialog.badge;
+    setListingDialog((prev) => ({ ...prev, error: undefined }));
+    if (!badge) return;
+
+    if (!isConnected || !address || !chainId) {
+      setShowConnectAlert(true);
+      return;
+    }
+
+    if (!badge.tokenId) {
+      setListingDialog((prev) => ({
+        ...prev,
+        error: languageDic.listingDialog.txError,
+      }));
+      return;
+    }
+
+    if (!BADGE_MARKETPLACE_ADDRESS || !BADGE_NFT_ADDRESS) {
+      setListingDialog((prev) => ({
+        ...prev,
+        error: languageDic.listingDialog.missingConfig,
+      }));
+      return;
+    }
+
+    const rawPrice = listingDialog.price.trim();
+    const parsed = Number.parseFloat(rawPrice);
+    if (!rawPrice || Number.isNaN(parsed) || parsed <= 0) {
+      setListingDialog((prev) => ({
+        ...prev,
+        error: languageDic.listingDialog.error,
+      }));
+      return;
+    }
+
+    const tokenIdStr = badge.tokenId.replace(/^#/, "").trim();
+    if (!tokenIdStr || Number.isNaN(Number(tokenIdStr))) {
+      setListingDialog((prev) => ({
+        ...prev,
+        error: languageDic.listingDialog.txError,
+      }));
+      return;
+    }
+
+    const fallbackListingId =
+      badge.listingId ??
+      `L-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
+
+    try {
+      const tokenId = BigInt(tokenIdStr);
+      const priceInWei = parseEther(rawPrice);
+
+      const approved = await publicClient.readContract({
+        address: BADGE_NFT_ADDRESS,
+        abi: badgeNftAbi,
+        functionName: "isApprovedForAll",
+        args: [address, BADGE_MARKETPLACE_ADDRESS],
+      });
+      if (!approved) {
+        setIsApproving(true);
+        try {
+          await publicClient.simulateContract({
+            address: BADGE_NFT_ADDRESS,
+            abi: badgeNftAbi,
+            functionName: "setApprovalForAll",
+            args: [BADGE_MARKETPLACE_ADDRESS, true],
+            account: address,
+          });
+          const approvalTx = await approveMarketplaceAsync({
+            address: BADGE_NFT_ADDRESS,
+            abi: badgeNftAbi,
+            functionName: "setApprovalForAll",
+            args: [BADGE_MARKETPLACE_ADDRESS, true],
+            account: address,
+          });
+          await publicClient.waitForTransactionReceipt({
+            hash: approvalTx,
+          });
+        } finally {
+          setIsApproving(false);
+        }
+      }
+
+      await publicClient.simulateContract({
+        address: BADGE_MARKETPLACE_ADDRESS,
+        abi: marketplaceAbi,
+        functionName: "list",
+        args: [BADGE_NFT_ADDRESS, tokenId, priceInWei],
+        account: address,
+      });
+
+      const txHash = await listBadgeAsync({
+        address: BADGE_MARKETPLACE_ADDRESS,
+        abi: marketplaceAbi,
+        functionName: "list",
+        args: [BADGE_NFT_ADDRESS, tokenId, priceInWei],
+        account: address,
+      });
+
+      setListingContext({
+        badgeId: badge.id,
+        price: parsed.toString(),
+        fallbackListingId,
+        account: address,
+        tokenId: tokenIdStr,
+      });
+      setListingTxHash(txHash);
+      resetListingDialog();
+    } catch (error) {
+      const message = resolveMarketErrorMessage(error);
+      setListingDialog((prev) => ({ ...prev, error: message }));
     }
   };
 
@@ -514,6 +997,79 @@ export default function MyBadgesPage() {
           <AlertDialogFooter>
             <AlertDialogAction>
               {globalDic.connectAlert.action}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      <AlertDialog
+        open={listingDialog.open}
+        onOpenChange={(open) => {
+          if (!open) {
+            resetListingDialog();
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {languageDic.listingDialog.title}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {languageDic.listingDialog.description}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {listingDialog.badge ? (
+            <div className="rounded-2xl border border-slate-900/10 bg-slate-50/80 p-3 text-xs text-slate-600">
+              <p className="font-semibold text-slate-900">
+                {listingDialog.badge.name}{" "}
+                {listingDialog.badge.tokenId
+                  ? `#${listingDialog.badge.tokenId}`
+                  : ""}
+              </p>
+              {listingDialog.badge.tokenURI ? (
+                <p className="mt-1 truncate text-[11px]">
+                  {listingDialog.badge.tokenURI}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
+          <div className="space-y-2">
+            <label className="text-xs uppercase tracking-[0.28em] text-slate-500">
+              {languageDic.listingDialog.priceLabel}
+            </label>
+            <input
+              className="w-full rounded-xl border border-slate-900/10 bg-white px-3 py-2 text-sm text-slate-900 outline-none ring-0 transition focus:border-slate-900/30 focus:ring-0"
+              inputMode="decimal"
+              min="0"
+              onChange={(event) => {
+                const value = event.target.value;
+                setListingDialog((prev) => ({
+                  ...prev,
+                  price: value,
+                  error: undefined,
+                }));
+              }}
+              placeholder={languageDic.listingDialog.pricePlaceholder}
+              step="0.0001"
+              type="number"
+              value={listingDialog.price}
+            />
+            {listingDialog.error ? (
+              <p className="text-xs text-rose-600">{listingDialog.error}</p>
+            ) : null}
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={resetListingDialog}>
+              {languageDic.listingDialog.cancel}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={isListingBusy}
+              onClick={(event) => {
+                event.preventDefault();
+                confirmListing();
+              }}
+            >
+              {languageDic.listingDialog.confirm}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -562,7 +1118,7 @@ export default function MyBadgesPage() {
               },
               {
                 label: languageDic.walletStats[2]?.label ?? "Listed",
-                value: 0,
+                value: badgeStats.listed,
               },
             ].map((item) => (
               <div
@@ -592,165 +1148,23 @@ export default function MyBadgesPage() {
               {mintFeedback.message}
             </div>
           ) : null}
+          {cancelError ? (
+            <div className="mt-3 rounded-2xl border border-rose-200 bg-rose-50/80 p-4 text-xs text-rose-900">
+              {cancelError}
+            </div>
+          ) : null}
         </div>
       </section>
 
-      <section
-        className="rounded-[28px] border border-slate-900/10 bg-white/75 p-6 animate-[fade-in-up_0.6s_ease-out_both]"
-        style={{ animationDelay: "120ms" }}
-      >
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <h2 className="text-lg font-semibold text-slate-900">
-            {languageDic.libraryTitle}
-          </h2>
-          <div className="flex flex-wrap gap-2">
-            {languageDic.filters.map((filter, index) => (
-              <button
-                className={`rounded-full border px-4 py-2 text-xs font-semibold transition ${
-                  index === 0
-                    ? "border-slate-900/20 bg-slate-900 text-amber-100"
-                    : "border-slate-900/10 bg-white text-slate-600"
-                }`}
-                key={filter}
-                type="button"
-              >
-                {filter}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div className="mt-6 grid gap-6 lg:grid-cols-2">
-          {displayBadges.map((badge) => {
-            const detailId = badge.tokenId
-              ? badge.tokenId.replace("#", "")
-              : badge.id;
-            return (
-              <div
-                className="flex flex-col gap-4 rounded-[24px] border border-slate-900/10 bg-white p-5 shadow-sm"
-                key={badge.id}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-amber-200 via-amber-100 to-emerald-100 text-xs font-semibold text-slate-700">
-                      {badge.imageUrl ? (
-                        <Image
-                          alt={badge.name}
-                          className="object-cover"
-                          fill
-                          sizes="64px"
-                          src={badge.imageUrl}
-                        />
-                      ) : (
-                        badge.name
-                      )}
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold text-slate-900">
-                        {badge.name}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {badge.listed ? (
-                      <span className="rounded-full bg-amber-100 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.24em] text-amber-900">
-                        {languageDic.listedTag}
-                      </span>
-                    ) : null}
-                    <span
-                      className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                        statusStyles[badge.status]
-                      }`}
-                    >
-                      {languageDic.statusLabels[badge.status]}
-                    </span>
-                  </div>
-                </div>
-                <div className="grid gap-3 text-xs text-slate-500 sm:grid-cols-2">
-                  <div className="rounded-2xl border border-slate-900/10 bg-slate-50/80 p-3">
-                    <p className="uppercase tracking-[0.28em]">
-                      {languageDic.cardLabels.updated}
-                    </p>
-                    <p className="mt-1 text-sm font-semibold text-slate-900">
-                      {badge.updated}
-                    </p>
-                  </div>
-                  {badge.tokenId ? (
-                    <div className="rounded-2xl border border-slate-900/10 bg-slate-50/80 p-3 sm:col-span-2">
-                      <p className="uppercase tracking-[0.28em]">
-                        {languageDic.cardLabels.tokenId}
-                      </p>
-                      <p className="mt-1 text-sm font-semibold text-slate-900">
-                        {`#${badge.tokenId}`} -{" "}
-                        {badge.price ?? languageDic.actions.notListed}
-                      </p>
-                    </div>
-                  ) : null}
-                  {badge.listingId ? (
-                    <div className="rounded-2xl border border-slate-900/10 bg-slate-50/80 p-3 sm:col-span-2">
-                      <p className="uppercase tracking-[0.28em]">
-                        {languageDic.cardLabels.listing}
-                      </p>
-                      <p className="mt-1 text-sm font-semibold text-slate-900">
-                        {badge.listingId}
-                      </p>
-                    </div>
-                  ) : null}
-                </div>
-                <div className="flex flex-wrap gap-3">
-                  {badge.status === "draft" ? (
-                    <button
-                      className="rounded-full bg-slate-900 px-4 py-2 text-xs font-semibold text-amber-50"
-                      type="button"
-                    >
-                      {languageDic.actions.save}
-                    </button>
-                  ) : null}
-                  {badge.status === "saved" ? (
-                    <button
-                      className="rounded-full bg-slate-900 px-4 py-2 text-xs font-semibold text-amber-50 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
-                      disabled={isMinting}
-                      type="button"
-                      onClick={() => {
-                        mint(badge);
-                      }}
-                    >
-                      {languageDic.actions.mint}
-                    </button>
-                  ) : null}
-                  {badge.status === "minted" && badge.listed ? (
-                    <button
-                      className="rounded-full bg-amber-100 px-4 py-2 text-xs font-semibold text-amber-900"
-                      type="button"
-                    >
-                      {languageDic.actions.cancel}
-                    </button>
-                  ) : null}
-                  {badge.status === "minted" && !badge.listed ? (
-                    <button
-                      className="rounded-full bg-amber-100 px-4 py-2 text-xs font-semibold text-amber-900"
-                      type="button"
-                    >
-                      {languageDic.actions.list}
-                    </button>
-                  ) : null}
-                  <Link
-                    className="rounded-full border border-slate-900/10 bg-white px-4 py-2 text-xs font-semibold text-slate-600"
-                    href={`/badges/${detailId}`}
-                  >
-                    {languageDic.actions.view}
-                  </Link>
-                  <button
-                    className="rounded-full border border-slate-900/10 bg-white px-4 py-2 text-xs font-semibold text-slate-600 cursor-pointer"
-                    type="button"
-                  >
-                    {languageDic.actions.delete}
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </section>
+      <BadgeLibrarySection
+        badges={displayBadges}
+        languageDic={languageDic}
+        isMinting={isMinting || isListingBusy}
+        isListingBusy={isListingBusy}
+        onList={list}
+        onMint={mint}
+        onCancel={cancel}
+      />
     </div>
   );
 }

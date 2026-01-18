@@ -13,7 +13,7 @@ export const badgeNftAbi = [
   {
     type: 'constructor',
     inputs: [
-      { name: 'manger', internalType: 'address', type: 'address' },
+      { name: 'manager', internalType: 'address', type: 'address' },
       {
         name: '_config',
         internalType: 'struct MintConfig',
@@ -671,6 +671,281 @@ export const badgeNftAbi = [
 ] as const
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Marketplace
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+export const marketplaceAbi = [
+  {
+    type: 'constructor',
+    inputs: [
+      { name: 'manager', internalType: 'address', type: 'address' },
+      { name: '_feeRecipient', internalType: 'address', type: 'address' },
+      { name: '_feeBps', internalType: 'uint96', type: 'uint96' },
+    ],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: '', internalType: 'address', type: 'address' }],
+    name: 'allowedNFT',
+    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'authority',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'listingId', internalType: 'uint256', type: 'uint256' }],
+    name: 'buy',
+    outputs: [],
+    stateMutability: 'payable',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'listingId', internalType: 'uint256', type: 'uint256' }],
+    name: 'cancel',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'feeBps',
+    outputs: [{ name: '', internalType: 'uint96', type: 'uint96' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'feeRecipient',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'isConsumingScheduledOp',
+    outputs: [{ name: '', internalType: 'bytes4', type: 'bytes4' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'nft', internalType: 'address', type: 'address' },
+      { name: 'tokenId', internalType: 'uint256', type: 'uint256' },
+      { name: 'price', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'list',
+    outputs: [{ name: 'listingId', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: '', internalType: 'address', type: 'address' },
+      { name: '', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'listingIdOf',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    name: 'listings',
+    outputs: [
+      { name: 'seller', internalType: 'address', type: 'address' },
+      { name: 'nft', internalType: 'address', type: 'address' },
+      { name: 'tokenId', internalType: 'uint256', type: 'uint256' },
+      { name: 'price', internalType: 'uint256', type: 'uint256' },
+      { name: 'active', internalType: 'bool', type: 'bool' },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'nextListingId',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'nft', internalType: 'address', type: 'address' },
+      { name: 'allowed', internalType: 'bool', type: 'bool' },
+    ],
+    name: 'setAllowedNFT',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'newAuthority', internalType: 'address', type: 'address' },
+    ],
+    name: 'setAuthority',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'recipient', internalType: 'address', type: 'address' },
+      { name: 'bps', internalType: 'uint96', type: 'uint96' },
+    ],
+    name: 'setFee',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'authority',
+        internalType: 'address',
+        type: 'address',
+        indexed: false,
+      },
+    ],
+    name: 'AuthorityUpdated',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'listingId',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: true,
+      },
+    ],
+    name: 'Canceled',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'recipient',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+      { name: 'bps', internalType: 'uint96', type: 'uint96', indexed: false },
+    ],
+    name: 'FeeUpdated',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'listingId',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: true,
+      },
+      {
+        name: 'seller',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+      { name: 'nft', internalType: 'address', type: 'address', indexed: true },
+      {
+        name: 'tokenId',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+      {
+        name: 'price',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+    ],
+    name: 'Listed',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'listingId',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: true,
+      },
+      {
+        name: 'buyer',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+      {
+        name: 'price',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+      {
+        name: 'platformFee',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+    ],
+    name: 'Purchased',
+  },
+  {
+    type: 'error',
+    inputs: [{ name: 'authority', internalType: 'address', type: 'address' }],
+    name: 'AccessManagedInvalidAuthority',
+  },
+  {
+    type: 'error',
+    inputs: [
+      { name: 'caller', internalType: 'address', type: 'address' },
+      { name: 'delay', internalType: 'uint32', type: 'uint32' },
+    ],
+    name: 'AccessManagedRequiredDelay',
+  },
+  {
+    type: 'error',
+    inputs: [{ name: 'caller', internalType: 'address', type: 'address' }],
+    name: 'AccessManagedUnauthorized',
+  },
+  { type: 'error', inputs: [], name: 'AlreadyListed' },
+  { type: 'error', inputs: [], name: 'FailedCall' },
+  { type: 'error', inputs: [], name: 'InactiveListing' },
+  { type: 'error', inputs: [], name: 'IncorrectValue' },
+  {
+    type: 'error',
+    inputs: [
+      { name: 'balance', internalType: 'uint256', type: 'uint256' },
+      { name: 'needed', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'InsufficientBalance',
+  },
+  { type: 'error', inputs: [], name: 'InvalidFeeRecipient' },
+  { type: 'error', inputs: [], name: 'NotAllowedNFT' },
+  { type: 'error', inputs: [], name: 'NotApproved' },
+  { type: 'error', inputs: [], name: 'NotOwner' },
+  { type: 'error', inputs: [], name: 'NotSeller' },
+  { type: 'error', inputs: [], name: 'PriceZero' },
+  { type: 'error', inputs: [], name: 'ReentrancyGuardReentrantCall' },
+] as const
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // React
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -1268,4 +1543,247 @@ export const useWatchBadgeNftWithdrawSucceedEvent =
   /*#__PURE__*/ createUseWatchContractEvent({
     abi: badgeNftAbi,
     eventName: 'WithdrawSucceed',
+  })
+
+/**
+ * Wraps __{@link useReadContract}__ with `abi` set to __{@link marketplaceAbi}__
+ */
+export const useReadMarketplace = /*#__PURE__*/ createUseReadContract({
+  abi: marketplaceAbi,
+})
+
+/**
+ * Wraps __{@link useReadContract}__ with `abi` set to __{@link marketplaceAbi}__ and `functionName` set to `"allowedNFT"`
+ */
+export const useReadMarketplaceAllowedNft = /*#__PURE__*/ createUseReadContract(
+  { abi: marketplaceAbi, functionName: 'allowedNFT' },
+)
+
+/**
+ * Wraps __{@link useReadContract}__ with `abi` set to __{@link marketplaceAbi}__ and `functionName` set to `"authority"`
+ */
+export const useReadMarketplaceAuthority = /*#__PURE__*/ createUseReadContract({
+  abi: marketplaceAbi,
+  functionName: 'authority',
+})
+
+/**
+ * Wraps __{@link useReadContract}__ with `abi` set to __{@link marketplaceAbi}__ and `functionName` set to `"feeBps"`
+ */
+export const useReadMarketplaceFeeBps = /*#__PURE__*/ createUseReadContract({
+  abi: marketplaceAbi,
+  functionName: 'feeBps',
+})
+
+/**
+ * Wraps __{@link useReadContract}__ with `abi` set to __{@link marketplaceAbi}__ and `functionName` set to `"feeRecipient"`
+ */
+export const useReadMarketplaceFeeRecipient =
+  /*#__PURE__*/ createUseReadContract({
+    abi: marketplaceAbi,
+    functionName: 'feeRecipient',
+  })
+
+/**
+ * Wraps __{@link useReadContract}__ with `abi` set to __{@link marketplaceAbi}__ and `functionName` set to `"isConsumingScheduledOp"`
+ */
+export const useReadMarketplaceIsConsumingScheduledOp =
+  /*#__PURE__*/ createUseReadContract({
+    abi: marketplaceAbi,
+    functionName: 'isConsumingScheduledOp',
+  })
+
+/**
+ * Wraps __{@link useReadContract}__ with `abi` set to __{@link marketplaceAbi}__ and `functionName` set to `"listingIdOf"`
+ */
+export const useReadMarketplaceListingIdOf =
+  /*#__PURE__*/ createUseReadContract({
+    abi: marketplaceAbi,
+    functionName: 'listingIdOf',
+  })
+
+/**
+ * Wraps __{@link useReadContract}__ with `abi` set to __{@link marketplaceAbi}__ and `functionName` set to `"listings"`
+ */
+export const useReadMarketplaceListings = /*#__PURE__*/ createUseReadContract({
+  abi: marketplaceAbi,
+  functionName: 'listings',
+})
+
+/**
+ * Wraps __{@link useReadContract}__ with `abi` set to __{@link marketplaceAbi}__ and `functionName` set to `"nextListingId"`
+ */
+export const useReadMarketplaceNextListingId =
+  /*#__PURE__*/ createUseReadContract({
+    abi: marketplaceAbi,
+    functionName: 'nextListingId',
+  })
+
+/**
+ * Wraps __{@link useWriteContract}__ with `abi` set to __{@link marketplaceAbi}__
+ */
+export const useWriteMarketplace = /*#__PURE__*/ createUseWriteContract({
+  abi: marketplaceAbi,
+})
+
+/**
+ * Wraps __{@link useWriteContract}__ with `abi` set to __{@link marketplaceAbi}__ and `functionName` set to `"buy"`
+ */
+export const useWriteMarketplaceBuy = /*#__PURE__*/ createUseWriteContract({
+  abi: marketplaceAbi,
+  functionName: 'buy',
+})
+
+/**
+ * Wraps __{@link useWriteContract}__ with `abi` set to __{@link marketplaceAbi}__ and `functionName` set to `"cancel"`
+ */
+export const useWriteMarketplaceCancel = /*#__PURE__*/ createUseWriteContract({
+  abi: marketplaceAbi,
+  functionName: 'cancel',
+})
+
+/**
+ * Wraps __{@link useWriteContract}__ with `abi` set to __{@link marketplaceAbi}__ and `functionName` set to `"list"`
+ */
+export const useWriteMarketplaceList = /*#__PURE__*/ createUseWriteContract({
+  abi: marketplaceAbi,
+  functionName: 'list',
+})
+
+/**
+ * Wraps __{@link useWriteContract}__ with `abi` set to __{@link marketplaceAbi}__ and `functionName` set to `"setAllowedNFT"`
+ */
+export const useWriteMarketplaceSetAllowedNft =
+  /*#__PURE__*/ createUseWriteContract({
+    abi: marketplaceAbi,
+    functionName: 'setAllowedNFT',
+  })
+
+/**
+ * Wraps __{@link useWriteContract}__ with `abi` set to __{@link marketplaceAbi}__ and `functionName` set to `"setAuthority"`
+ */
+export const useWriteMarketplaceSetAuthority =
+  /*#__PURE__*/ createUseWriteContract({
+    abi: marketplaceAbi,
+    functionName: 'setAuthority',
+  })
+
+/**
+ * Wraps __{@link useWriteContract}__ with `abi` set to __{@link marketplaceAbi}__ and `functionName` set to `"setFee"`
+ */
+export const useWriteMarketplaceSetFee = /*#__PURE__*/ createUseWriteContract({
+  abi: marketplaceAbi,
+  functionName: 'setFee',
+})
+
+/**
+ * Wraps __{@link useSimulateContract}__ with `abi` set to __{@link marketplaceAbi}__
+ */
+export const useSimulateMarketplace = /*#__PURE__*/ createUseSimulateContract({
+  abi: marketplaceAbi,
+})
+
+/**
+ * Wraps __{@link useSimulateContract}__ with `abi` set to __{@link marketplaceAbi}__ and `functionName` set to `"buy"`
+ */
+export const useSimulateMarketplaceBuy =
+  /*#__PURE__*/ createUseSimulateContract({
+    abi: marketplaceAbi,
+    functionName: 'buy',
+  })
+
+/**
+ * Wraps __{@link useSimulateContract}__ with `abi` set to __{@link marketplaceAbi}__ and `functionName` set to `"cancel"`
+ */
+export const useSimulateMarketplaceCancel =
+  /*#__PURE__*/ createUseSimulateContract({
+    abi: marketplaceAbi,
+    functionName: 'cancel',
+  })
+
+/**
+ * Wraps __{@link useSimulateContract}__ with `abi` set to __{@link marketplaceAbi}__ and `functionName` set to `"list"`
+ */
+export const useSimulateMarketplaceList =
+  /*#__PURE__*/ createUseSimulateContract({
+    abi: marketplaceAbi,
+    functionName: 'list',
+  })
+
+/**
+ * Wraps __{@link useSimulateContract}__ with `abi` set to __{@link marketplaceAbi}__ and `functionName` set to `"setAllowedNFT"`
+ */
+export const useSimulateMarketplaceSetAllowedNft =
+  /*#__PURE__*/ createUseSimulateContract({
+    abi: marketplaceAbi,
+    functionName: 'setAllowedNFT',
+  })
+
+/**
+ * Wraps __{@link useSimulateContract}__ with `abi` set to __{@link marketplaceAbi}__ and `functionName` set to `"setAuthority"`
+ */
+export const useSimulateMarketplaceSetAuthority =
+  /*#__PURE__*/ createUseSimulateContract({
+    abi: marketplaceAbi,
+    functionName: 'setAuthority',
+  })
+
+/**
+ * Wraps __{@link useSimulateContract}__ with `abi` set to __{@link marketplaceAbi}__ and `functionName` set to `"setFee"`
+ */
+export const useSimulateMarketplaceSetFee =
+  /*#__PURE__*/ createUseSimulateContract({
+    abi: marketplaceAbi,
+    functionName: 'setFee',
+  })
+
+/**
+ * Wraps __{@link useWatchContractEvent}__ with `abi` set to __{@link marketplaceAbi}__
+ */
+export const useWatchMarketplaceEvent =
+  /*#__PURE__*/ createUseWatchContractEvent({ abi: marketplaceAbi })
+
+/**
+ * Wraps __{@link useWatchContractEvent}__ with `abi` set to __{@link marketplaceAbi}__ and `eventName` set to `"AuthorityUpdated"`
+ */
+export const useWatchMarketplaceAuthorityUpdatedEvent =
+  /*#__PURE__*/ createUseWatchContractEvent({
+    abi: marketplaceAbi,
+    eventName: 'AuthorityUpdated',
+  })
+
+/**
+ * Wraps __{@link useWatchContractEvent}__ with `abi` set to __{@link marketplaceAbi}__ and `eventName` set to `"Canceled"`
+ */
+export const useWatchMarketplaceCanceledEvent =
+  /*#__PURE__*/ createUseWatchContractEvent({
+    abi: marketplaceAbi,
+    eventName: 'Canceled',
+  })
+
+/**
+ * Wraps __{@link useWatchContractEvent}__ with `abi` set to __{@link marketplaceAbi}__ and `eventName` set to `"FeeUpdated"`
+ */
+export const useWatchMarketplaceFeeUpdatedEvent =
+  /*#__PURE__*/ createUseWatchContractEvent({
+    abi: marketplaceAbi,
+    eventName: 'FeeUpdated',
+  })
+
+/**
+ * Wraps __{@link useWatchContractEvent}__ with `abi` set to __{@link marketplaceAbi}__ and `eventName` set to `"Listed"`
+ */
+export const useWatchMarketplaceListedEvent =
+  /*#__PURE__*/ createUseWatchContractEvent({
+    abi: marketplaceAbi,
+    eventName: 'Listed',
+  })
+
+/**
+ * Wraps __{@link useWatchContractEvent}__ with `abi` set to __{@link marketplaceAbi}__ and `eventName` set to `"Purchased"`
+ */
+export const useWatchMarketplacePurchasedEvent =
+  /*#__PURE__*/ createUseWatchContractEvent({
+    abi: marketplaceAbi,
+    eventName: 'Purchased',
   })

@@ -3,7 +3,7 @@ import { getAddress } from "ethers";
 import { buildFingerprint, buildSignature } from "@src/utils/signature";
 import { getIpfsFilesByCid } from "@src/server/ipfs";
 
-const BADGE_NFT_ADDRESS = process.env.BADGE_NFT_ADDRESS ?? "";
+const BADGE_NFT_ADDRESS = process.env.NEXT_PUBLIC_BADGE_NFT_ADDRESS ?? "";
 
 export const runtime = "nodejs";
 

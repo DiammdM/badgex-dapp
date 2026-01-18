@@ -9,6 +9,8 @@ type UpdateBadgePayload = {
   status?: BadgeRecordStatus;
   tokenId?: string;
   userId?: `0x${string}`;
+  price?: string | null;
+  listingId?: string | null;
 };
 
 export async function PATCH(
@@ -22,12 +24,27 @@ export async function PATCH(
     const userId = body.userId;
     const tokenId =
       typeof body.tokenId === "string" ? body.tokenId.trim() : undefined;
+    const price =
+      typeof body.price === "string"
+        ? body.price.trim()
+        : body.price === null
+        ? null
+        : undefined;
+    const listingId =
+      typeof body.listingId === "string"
+        ? body.listingId.trim()
+        : body.listingId === null
+        ? null
+        : undefined;
 
     if (!userId) {
       return NextResponse.json({ error: "Missing userId" }, { status: 400 });
     }
 
-    if (!status || status !== BadgeRecordStatus.Minted) {
+    if (
+      !status ||
+      ![BadgeRecordStatus.Minted, BadgeRecordStatus.Listed].includes(status)
+    ) {
       return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
     }
 
@@ -35,11 +52,25 @@ export async function PATCH(
       return NextResponse.json({ error: "Invalid tokenId" }, { status: 400 });
     }
 
+    if (status === BadgeRecordStatus.Listed) {
+      if (!price) {
+        return NextResponse.json({ error: "Missing price" }, { status: 400 });
+      }
+      if (!listingId) {
+        return NextResponse.json(
+          { error: "Missing listingId" },
+          { status: 400 }
+        );
+      }
+    }
+
     const result = await updateBadgeStatusForUser({
       userId,
       badgeId: id,
       status,
       tokenId,
+      price,
+      listingId,
     });
 
     if (result.count === 0) {

@@ -77,6 +77,8 @@ export const listBadgesForUser = async (
       metadataCid: true,
       tokenUri: true,
       tokenId: true,
+      listingId: true,
+      price: true,
       ipfsUrl: true,
       updatedAt: true,
     },
@@ -137,20 +139,58 @@ export const updateBadgeStatusForUser = async ({
   badgeId,
   status,
   tokenId,
+  listingId,
+  price,
 }: {
   userId: string;
   badgeId: string;
   status: BadgeRecordStatus;
   tokenId?: string;
+  listingId?: string | null;
+  price?: string | null;
 }) => {
-  const data: { status: BadgeRecordStatus; tokenId?: string } = { status };
+  const data: {
+    status: BadgeRecordStatus;
+    tokenId?: string;
+    listingId?: string | null;
+    price?: string | null;
+  } = { status };
   if (tokenId) {
     data.tokenId = tokenId;
+  }
+  if (listingId !== undefined) {
+    data.listingId = listingId;
+  }
+  if (price !== undefined) {
+    data.price = price;
   }
   return prisma.badgeRecord.updateMany({
     where: {
       id: badgeId,
       userId,
+    },
+    data,
+  });
+};
+
+export const updateBadgeStatusByTokenUri = async ({
+  tokenUri,
+  status,
+  tokenId,
+}: {
+  tokenUri: string;
+  status: BadgeRecordStatus;
+  tokenId?: string;
+}) => {
+  const data: { status: BadgeRecordStatus; tokenId?: string | null } = {
+    status,
+  };
+  if (tokenId !== undefined) {
+    data.tokenId = tokenId;
+  }
+  return prisma.badgeRecord.updateMany({
+    where: {
+      tokenUri,
     },
     data,
   });

@@ -13,6 +13,7 @@ export enum BadgeRecordStatus {
   Draft = "DRAFT",
   Saved = "SAVED",
   Minted = "MINTED",
+  Listed = "LISTED",
 }
 
 export type BadgeTraitType = BadgePropertyNames;
@@ -40,6 +41,8 @@ export type BadgeListItem = {
   ipfsUrl: string | null;
   updatedAt: string;
   imageUrl: string | null;
+  listingId?: string | null;
+  price?: string | null;
 };
 
 export type CreateBadgeInput = {

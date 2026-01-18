@@ -17,6 +17,7 @@ enum BadgeStatus {
   DRAFT
   SAVED
   MINTED
+  LISTED
 }
 
 model BadgeRecord {
@@ -30,6 +31,8 @@ model BadgeRecord {
   metadataCid String?
   tokenUri    String?
   tokenId     String?
+  listingId   String?
+  price       String?
   ipfsUrl     String
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
