@@ -77,6 +77,17 @@ export type BadgeMarketRecord = {
   updatedAt: string;
 };
 
+export type MarketPurchaseRecord = {
+  id: string;
+  tokenId?: string | null;
+  badgeName?: string | null;
+  buyer: string;
+  seller: string;
+  price?: string | null;
+  listingId?: string | null;
+  purchasedAt: string;
+};
+
 export type BadgeExploreStats = {
   mintedSupply: number;
   uniqueOwners: number;

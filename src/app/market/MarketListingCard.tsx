@@ -20,6 +20,7 @@ export type MarketListing = {
 };
 
 type MarketListingCardCopy = {
+  royaltyLabel: string;
   priceLabel: string;
   feeLabel: string;
   listedLabel: string;
@@ -30,7 +31,7 @@ type MarketListingCardCopy = {
 
 type MarketListingCardProps = {
   listing: MarketListing;
-  languageDic: MarketListingCardCopy;
+  copy: MarketListingCardCopy;
   isBuying: boolean;
   isBuyDisabled: boolean;
   onBuyNow: (listing: MarketListing) => void;
@@ -38,7 +39,7 @@ type MarketListingCardProps = {
 
 export function MarketListingCard({
   listing,
-  languageDic,
+  copy,
   isBuying,
   isBuyDisabled,
   onBuyNow,
@@ -48,6 +49,9 @@ export function MarketListingCard({
       <div className="flex items-center justify-between">
         <span className="rounded-full bg-slate-900 px-3 py-1 text-xs font-semibold text-amber-100">
           {listing.displayId}
+        </span>
+        <span className="text-xs font-semibold text-slate-500">
+          {copy.royaltyLabel} {listing.royaltyLabel}
         </span>
       </div>
       <div className="flex items-center gap-4">
@@ -69,7 +73,7 @@ export function MarketListingCard({
       <div className="grid gap-3 text-sm sm:grid-cols-2">
         <div className="rounded-2xl border border-slate-900/10 bg-slate-50/80 p-3">
           <p className="text-xs uppercase tracking-[0.28em] text-slate-500">
-            {languageDic.priceLabel}
+            {copy.priceLabel}
           </p>
           <p className="mt-1 text-base font-semibold text-slate-900">
             {listing.priceLabel}
@@ -77,13 +81,13 @@ export function MarketListingCard({
         </div>
         <div className="rounded-2xl border border-slate-900/10 bg-slate-50/80 p-3">
           <p className="text-xs uppercase tracking-[0.28em] text-slate-500">
-            {languageDic.feeLabel}
+            {copy.feeLabel}
           </p>
           <p className="mt-1 text-base font-semibold text-slate-900">1.5%</p>
         </div>
         <div className="rounded-2xl border border-slate-900/10 bg-slate-50/80 p-3 sm:col-span-2">
           <p className="text-xs uppercase tracking-[0.28em] text-slate-500">
-            {languageDic.listedLabel}
+            {copy.listedLabel}
           </p>
           <p className="mt-1 text-sm font-semibold text-slate-900">
             {listing.listedAt}
@@ -101,13 +105,13 @@ export function MarketListingCard({
           onClick={() => onBuyNow(listing)}
           type="button"
         >
-          {isBuying ? languageDic.buying : languageDic.buyNow}
+          {isBuying ? copy.buying : copy.buyNow}
         </button>
         <Link
           className="flex-1 rounded-full border border-slate-900/10 bg-white px-4 py-2 text-center text-xs font-semibold text-slate-600"
           href={`/badges/${listing.linkId}`}
         >
-          {languageDic.viewDetails}
+          {copy.viewDetails}
         </Link>
       </div>
     </div>

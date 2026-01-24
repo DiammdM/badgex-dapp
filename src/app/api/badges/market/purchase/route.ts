@@ -22,7 +22,7 @@ export async function POST(request: Request) {
 
     const result = await finalizeMarketPurchase({ badgeId, buyer });
 
-    if (result.count === 0) {
+    if (!result.ok) {
       return NextResponse.json({ error: "Badge not found" }, { status: 404 });
     }
 

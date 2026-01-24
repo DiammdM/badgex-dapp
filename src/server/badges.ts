@@ -9,6 +9,7 @@ import {
   BadgeMarketRecord,
   BadgeListItem,
   BadgeRecordStatus,
+  MarketPurchaseRecord,
   CreateBadgeInput,
   Metadata,
   MetaAttribute,
@@ -406,6 +407,96 @@ export const listMarketBadges = async ({
   };
 };
 
+export const listMarketPurchases = async ({
+  limit,
+  offset,
+}: {
+  limit: number;
+  offset: number;
+}): Promise<{
+  records: MarketPurchaseRecord[];
+  hasMore: boolean;
+  nextOffset: number;
+}> => {
+  const records = await prisma.purchaseRecord.findMany({
+    orderBy: {
+      purchasedAt: "desc",
+    },
+    skip: offset,
+    take: limit + 1,
+    select: {
+      id: true,
+      tokenId: true,
+      buyer: true,
+      seller: true,
+      price: true,
+      listingId: true,
+      purchasedAt: true,
+    },
+  });
+
+  const hasMore = records.length > limit;
+  const slice = hasMore ? records.slice(0, limit) : records;
+
+  const tokenIds = slice
+    .map((record) =>
+      typeof record.tokenId === "string" ? record.tokenId.trim() : ""
+    )
+    .filter(Boolean);
+  const tokenLookup = new Set<string>();
+  tokenIds.forEach((tokenId) => {
+    tokenLookup.add(tokenId);
+    const normalized = normalizeTokenId(tokenId);
+    if (normalized) {
+      tokenLookup.add(normalized);
+      tokenLookup.add(`#${normalized}`);
+    }
+  });
+
+  const badgeNames = new Map<string, string>();
+  if (tokenLookup.size > 0) {
+    const badges = await prisma.badgeRecord.findMany({
+      where: {
+        tokenId: { in: Array.from(tokenLookup) },
+      },
+      select: {
+        name: true,
+        tokenId: true,
+      },
+    });
+    badges.forEach((badge) => {
+      if (!badge.tokenId) return;
+      const normalized = normalizeTokenId(badge.tokenId);
+      if (normalized && !badgeNames.has(normalized)) {
+        badgeNames.set(normalized, badge.name);
+      }
+    });
+  }
+
+  const mapped = slice.map((record) => {
+    const normalized =
+      typeof record.tokenId === "string"
+        ? normalizeTokenId(record.tokenId)
+        : "";
+    return {
+      id: record.id,
+      tokenId: record.tokenId ?? null,
+      badgeName: normalized ? badgeNames.get(normalized) ?? null : null,
+      buyer: record.buyer,
+      seller: record.seller,
+      price: record.price ?? null,
+      listingId: record.listingId ?? null,
+      purchasedAt: record.purchasedAt.toISOString(),
+    };
+  });
+
+  return {
+    records: mapped,
+    hasMore,
+    nextOffset: offset + mapped.length,
+  };
+};
+
 export const getExploreBadgeByTokenId = async (
   tokenId: string
 ): Promise<BadgeDetailRecord | null> => {
@@ -569,7 +660,24 @@ export const finalizeMarketPurchase = async ({
   badgeId: string;
   buyer: string;
 }) => {
-  return prisma.badgeRecord.updateMany({
+  const record = await prisma.badgeRecord.findFirst({
+    where: {
+      id: badgeId,
+      status: BadgeRecordStatus.Listed,
+    },
+    select: {
+      userId: true,
+      price: true,
+      listingId: true,
+      tokenId: true,
+    },
+  });
+
+  if (!record) {
+    return { ok: false, updated: 0 };
+  }
+
+  const updated = await prisma.badgeRecord.updateMany({
     where: {
       id: badgeId,
       status: BadgeRecordStatus.Listed,
@@ -581,4 +689,20 @@ export const finalizeMarketPurchase = async ({
       price: null,
     },
   });
+
+  if (updated.count === 0) {
+    return { ok: false, updated: 0 };
+  }
+
+  await prisma.purchaseRecord.create({
+    data: {
+      tokenId: record.tokenId as string,
+      buyer,
+      seller: record.userId,
+      price: record.price as string,
+      listingId: record.listingId as string,
+    },
+  });
+
+  return { ok: true, updated: updated.count };
 };

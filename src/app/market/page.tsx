@@ -1,9 +1,14 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLanguage } from "@src/components/LanguageProvider";
-import { global, marketContent } from "../i18n";
-import { type BadgeConfig, type BadgeMarketRecord } from "@src/types/badge";
+import { global, marketActivityContent, marketContent } from "../i18n";
+import {
+  type BadgeConfig,
+  type BadgeMarketRecord,
+  type MarketPurchaseRecord,
+} from "@src/types/badge";
 import { BADGE_THEME_OPTIONS } from "@src/types/badge-options";
 import { Button } from "@src/components/ui/button";
 import { Input } from "@src/components/ui/input";
@@ -31,6 +36,7 @@ import {
 import { MarketListingCard, type MarketListing } from "./MarketListingCard";
 
 const PAGE_SIZE = 6;
+const ACTIVITY_PAGE_SIZE = 6;
 const DEFAULT_ROYALTY = "2.5%";
 
 const BADGE_MARKETPLACE_ADDRESS = process.env
@@ -58,6 +64,23 @@ const formatListedAt = (value: string, locale: string) => {
     year: "numeric",
     month: "short",
     day: "numeric",
+  });
+};
+
+const formatAddress = (value: string) => {
+  if (value.length <= 12) return value;
+  return `${value.slice(0, 6)}...${value.slice(-4)}`;
+};
+
+const formatActivityTime = (value: string, locale: string) => {
+  const timestamp = Date.parse(value);
+  if (Number.isNaN(timestamp)) return value;
+  return new Date(timestamp).toLocaleString(locale, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
   });
 };
 
@@ -114,17 +137,26 @@ export default function MarketPage() {
   const { language } = useLanguage();
   const languageDic = marketContent[language];
   const globalCopy = global[language];
+  const activityCopy = marketActivityContent[language];
   const locale = language === "zh" ? "zh-CN" : "en-US";
   const { isConnected, address, chainId } = useConnection();
   const publicClient = usePublicClient();
   const { mutateAsync: buyBadgeAsync, isPending: isBuying } =
     useWriteMarketplaceBuy();
   const [listings, setListings] = useState<BadgeMarketRecord[]>([]);
+  const [activityRecords, setActivityRecords] = useState<
+    MarketPurchaseRecord[]
+  >([]);
   const [loading, setLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [activityLoading, setActivityLoading] = useState(true);
+  const [activityHasError, setActivityHasError] = useState(false);
+  const [activityHasMore, setActivityHasMore] = useState(true);
+  const [isActivityLoadingMore, setIsActivityLoadingMore] = useState(false);
   const [offset, setOffset] = useState(0);
+  const [activityOffset, setActivityOffset] = useState(0);
   const [showConnectAlert, setShowConnectAlert] = useState(false);
   const [sortKey, setSortKey] = useState("latest");
   const [priceRange, setPriceRange] = useState({ min: "", max: "" });
@@ -151,6 +183,7 @@ export default function MarketPage() {
   const [hiddenListingIds, setHiddenListingIds] = useState<string[]>([]);
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
   const requestAbortRef = useRef<AbortController | null>(null);
+  const activityAbortRef = useRef<AbortController | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const { data: buyReceipt, error: buyReceiptError } =
@@ -209,90 +242,6 @@ export default function MarketPage() {
     setPriceRangeDraft(priceRange);
     setPriceRangeError(null);
   }, [isPricePopoverOpen, priceRange]);
-
-  useEffect(() => {
-    if (!buyReceipt || !buyTxHash || !buyContext) return;
-    if (buyReceipt.status === "reverted") {
-      const resolveRevert = async () => {
-        let message = languageDic.buyError as string;
-        try {
-          if (publicClient) {
-            const listingId = BigInt(buyContext.listingId);
-            const value = parsePriceToWei(buyContext.price);
-            await publicClient.simulateContract({
-              address: BADGE_MARKETPLACE_ADDRESS,
-              abi: marketplaceAbi,
-              functionName: "buy",
-              args: [listingId],
-              account: buyContext.account,
-              value: value ?? undefined,
-              blockNumber: buyReceipt.blockNumber,
-            });
-          }
-        } catch (error) {
-          message = resolveMarketErrorMessage(error);
-        }
-        setBuyFeedback({ type: "error", message });
-        setBuyContext(null);
-        setBuyTxHash(undefined);
-        setBuyingId(null);
-      };
-
-      void resolveRevert();
-      return;
-    }
-
-    if (buyReceipt.status !== "success") return;
-
-    setBuyFeedback({ type: "success", message: languageDic.buySuccess });
-    const purchaseContext = buyContext;
-    const syncPurchase = async () => {
-      try {
-        const response = await fetch("/api/badges/market/purchase", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            badgeId: purchaseContext.recordId,
-            buyer: purchaseContext.account,
-          }),
-        });
-        if (!response.ok) {
-          throw new Error("Failed to update market purchase");
-        }
-      } catch (error) {
-        console.error("Failed to sync market purchase", error);
-      }
-    };
-    void syncPurchase();
-    setHiddenListingIds((prev) =>
-      prev.includes(buyContext.recordId) ? prev : [...prev, buyContext.recordId]
-    );
-    setListings((prev) =>
-      prev.filter((listing) => listing.id !== buyContext.recordId)
-    );
-    setBuyContext(null);
-    setBuyTxHash(undefined);
-    setBuyingId(null);
-  }, [
-    buyContext,
-    buyReceipt,
-    buyTxHash,
-    languageDic.buyError,
-    languageDic.buySuccess,
-    publicClient,
-    resolveMarketErrorMessage,
-  ]);
-
-  useEffect(() => {
-    if (!buyReceiptError || !buyTxHash) return;
-    setBuyFeedback({
-      type: "error",
-      message: resolveMarketErrorMessage(buyReceiptError),
-    });
-    setBuyContext(null);
-    setBuyTxHash(undefined);
-    setBuyingId(null);
-  }, [buyReceiptError, buyTxHash, resolveMarketErrorMessage]);
 
   const loadListings = useCallback(
     async (nextOffset: number, initial: boolean, search: string) => {
@@ -370,14 +319,187 @@ export default function MarketPage() {
     []
   );
 
+  const loadActivity = useCallback(async (nextOffset: number, initial: boolean) => {
+    if (initial) {
+      activityAbortRef.current?.abort();
+      const controller = new AbortController();
+      activityAbortRef.current = controller;
+      setActivityLoading(true);
+      setActivityHasError(false);
+      setActivityHasMore(true);
+      setActivityOffset(0);
+      setActivityRecords([]);
+      try {
+        const params = new URLSearchParams({
+          offset: String(nextOffset),
+          limit: String(ACTIVITY_PAGE_SIZE),
+        });
+        const response = await fetch(
+          `/api/badges/market/activity?${params.toString()}`,
+          { signal: controller.signal }
+        );
+        if (!response.ok) {
+          throw new Error("Failed to load market activity");
+        }
+        const data = await response.json();
+        const nextRecords = Array.isArray(data?.records) ? data.records : [];
+        setActivityRecords(nextRecords);
+        setActivityHasMore(Boolean(data?.hasMore));
+        setActivityOffset(
+          typeof data?.nextOffset === "number"
+            ? data.nextOffset
+            : nextOffset + nextRecords.length
+        );
+      } catch (error) {
+        if ((error as { name?: string }).name !== "AbortError") {
+          console.error(error);
+          setActivityHasError(true);
+          setActivityRecords([]);
+        }
+      } finally {
+        setActivityLoading(false);
+      }
+      return;
+    }
+
+    setIsActivityLoadingMore(true);
+    try {
+      const params = new URLSearchParams({
+        offset: String(nextOffset),
+        limit: String(ACTIVITY_PAGE_SIZE),
+      });
+      const response = await fetch(
+        `/api/badges/market/activity?${params.toString()}`
+      );
+      if (!response.ok) {
+        throw new Error("Failed to load market activity");
+      }
+      const data = await response.json();
+      const nextRecords = Array.isArray(data?.records) ? data.records : [];
+      setActivityRecords((prev) => [...prev, ...nextRecords]);
+      setActivityHasMore(Boolean(data?.hasMore));
+      setActivityOffset(
+        typeof data?.nextOffset === "number"
+          ? data.nextOffset
+          : nextOffset + nextRecords.length
+      );
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsActivityLoadingMore(false);
+    }
+  }, []);
+
   const loadMore = useCallback(() => {
     if (loading || isLoadingMore || !hasMore) return;
     void loadListings(offset, false, debouncedSearch);
   }, [debouncedSearch, hasMore, isLoadingMore, loadListings, loading, offset]);
 
+  const loadMoreActivity = useCallback(() => {
+    if (activityLoading || isActivityLoadingMore || !activityHasMore) return;
+    void loadActivity(activityOffset, false);
+  }, [
+    activityHasMore,
+    activityLoading,
+    activityOffset,
+    isActivityLoadingMore,
+    loadActivity,
+  ]);
+
   useEffect(() => {
     void loadListings(0, true, debouncedSearch);
   }, [debouncedSearch, loadListings]);
+
+  useEffect(() => {
+    void loadActivity(0, true);
+  }, [loadActivity]);
+
+  useEffect(() => {
+    if (!buyReceipt || !buyTxHash || !buyContext) return;
+    if (buyReceipt.status === "reverted") {
+      const resolveRevert = async () => {
+        let message = languageDic.buyError as string;
+        try {
+          if (publicClient) {
+            const listingId = BigInt(buyContext.listingId);
+            const value = parsePriceToWei(buyContext.price);
+            await publicClient.simulateContract({
+              address: BADGE_MARKETPLACE_ADDRESS,
+              abi: marketplaceAbi,
+              functionName: "buy",
+              args: [listingId],
+              account: buyContext.account,
+              value: value ?? undefined,
+              blockNumber: buyReceipt.blockNumber,
+            });
+          }
+        } catch (error) {
+          message = resolveMarketErrorMessage(error);
+        }
+        setBuyFeedback({ type: "error", message });
+        setBuyContext(null);
+        setBuyTxHash(undefined);
+        setBuyingId(null);
+      };
+
+      void resolveRevert();
+      return;
+    }
+
+    if (buyReceipt.status !== "success") return;
+
+    setBuyFeedback({ type: "success", message: languageDic.buySuccess });
+    const purchaseContext = buyContext;
+    const syncPurchase = async () => {
+      try {
+        const response = await fetch("/api/badges/market/purchase", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            badgeId: purchaseContext.recordId,
+            buyer: purchaseContext.account,
+          }),
+        });
+        if (!response.ok) {
+          throw new Error("Failed to update market purchase");
+        }
+      } catch (error) {
+        console.error("Failed to sync market purchase", error);
+      } finally {
+        void loadActivity(0, true);
+      }
+    };
+    void syncPurchase();
+    setHiddenListingIds((prev) =>
+      prev.includes(buyContext.recordId) ? prev : [...prev, buyContext.recordId]
+    );
+    setListings((prev) =>
+      prev.filter((listing) => listing.id !== buyContext.recordId)
+    );
+    setBuyContext(null);
+    setBuyTxHash(undefined);
+    setBuyingId(null);
+  }, [
+    buyContext,
+    buyReceipt,
+    buyTxHash,
+    languageDic.buyError,
+    languageDic.buySuccess,
+    loadActivity,
+    publicClient,
+    resolveMarketErrorMessage,
+  ]);
+
+  useEffect(() => {
+    if (!buyReceiptError || !buyTxHash) return;
+    setBuyFeedback({
+      type: "error",
+      message: resolveMarketErrorMessage(buyReceiptError),
+    });
+    setBuyContext(null);
+    setBuyTxHash(undefined);
+    setBuyingId(null);
+  }, [buyReceiptError, buyTxHash, resolveMarketErrorMessage]);
 
   useEffect(() => {
     const node = loadMoreRef.current;
@@ -469,6 +591,27 @@ export default function MarketPage() {
     priceRange.min,
     sortKey,
   ]);
+
+  const activityRows = useMemo(() => {
+    return activityRecords.map((record) => {
+      const tokenLabel = formatTokenLabel(record.tokenId);
+      const itemLabel =
+        record.badgeName?.trim() || tokenLabel !== "--"
+          ? record.badgeName ?? `${activityCopy.badgePrefix} ${tokenLabel}`
+          : activityCopy.unknownBadge;
+      const linkId = normalizeTokenId(record.tokenId);
+      return {
+        id: record.id,
+        eventLabel: activityCopy.eventSale,
+        itemLabel,
+        itemLink: linkId ? `/badges/${linkId}` : null,
+        priceLabel: formatPriceLabel(record.price),
+        fromLabel: formatAddress(record.seller),
+        toLabel: formatAddress(record.buyer),
+        timeLabel: formatActivityTime(record.purchasedAt, locale),
+      };
+    });
+  }, [activityCopy, activityRecords, locale]);
 
   const buyNow = async (listing: MarketListing) => {
     if (!isConnected || !address || !chainId) {
@@ -741,69 +884,157 @@ export default function MarketPage() {
             </button>
           </div>
         </div>
-        <div className="mt-6 grid gap-6 lg:grid-cols-2">
-          {buyFeedback ? (
-            <div
-              className={`col-span-full rounded-[20px] border px-4 py-3 text-sm ${
-                buyFeedback.type === "success"
-                  ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                  : "border-rose-200 bg-rose-50 text-rose-700"
-              }`}
-            >
-              {buyFeedback.message}
-            </div>
-          ) : null}
-          {loading ? (
-            <div className="col-span-full rounded-[24px] border border-dashed border-slate-900/10 bg-white/60 p-8 text-center text-sm text-slate-500">
-              {languageDic.loadingText}
-            </div>
-          ) : hasError ? (
-            <div className="col-span-full rounded-[24px] border border-dashed border-slate-900/10 bg-white/60 p-8 text-center text-sm text-slate-500">
-              {languageDic.errorText}
-            </div>
-          ) : displayListings.length === 0 ? (
-            <div className="col-span-full rounded-[24px] border border-dashed border-slate-900/10 bg-white/60 p-8 text-center text-sm text-slate-500">
-              {languageDic.emptyText}
-            </div>
-          ) : (
-            displayListings.map((listing) => (
-              <MarketListingCard
-                languageDic={languageDic}
-                isBuying={buyingId === listing.id}
-                isBuyDisabled={
-                  isBuyingBusy ||
-                  !listing.listingId ||
-                  !parseListingId(listing.listingId) ||
-                  !listing.rawPrice
-                }
-                key={listing.id}
-                listing={listing}
-                onBuyNow={buyNow}
-              />
-            ))
-          )}
-          {!loading && !hasError && displayListings.length > 0 ? (
-            <div
-              className="col-span-full flex items-center justify-center"
-              ref={loadMoreRef}
-            >
-              {hasMore ? (
-                isLoadingMore ? (
-                  <span className="text-sm text-slate-500">
-                    {languageDic.loadingMore}
-                  </span>
-                ) : (
-                  <Button variant="outline" type="button" onClick={loadMore}>
-                    {languageDic.loadMore}
-                  </Button>
-                )
+        <div className="mt-6 grid gap-6 lg:grid-cols-[1.6fr_0.9fr]">
+          <div className="space-y-6">
+            {buyFeedback ? (
+              <div
+                className={`rounded-[20px] border px-4 py-3 text-sm ${
+                  buyFeedback.type === "success"
+                    ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                    : "border-rose-200 bg-rose-50 text-rose-700"
+                }`}
+              >
+                {buyFeedback.message}
+              </div>
+            ) : null}
+            <div className="grid gap-6 md:grid-cols-2">
+              {loading ? (
+                <div className="md:col-span-2 rounded-[24px] border border-dashed border-slate-900/10 bg-white/60 p-8 text-center text-sm text-slate-500">
+                  {languageDic.loadingText}
+                </div>
+              ) : hasError ? (
+                <div className="md:col-span-2 rounded-[24px] border border-dashed border-slate-900/10 bg-white/60 p-8 text-center text-sm text-slate-500">
+                  {languageDic.errorText}
+                </div>
+              ) : displayListings.length === 0 ? (
+                <div className="md:col-span-2 rounded-[24px] border border-dashed border-slate-900/10 bg-white/60 p-8 text-center text-sm text-slate-500">
+                  {languageDic.emptyText}
+                </div>
               ) : (
-                <span className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">
-                  {languageDic.endText}
-                </span>
+                displayListings.map((listing) => (
+                  <MarketListingCard
+                    copy={languageDic}
+                    isBuying={buyingId === listing.id}
+                    isBuyDisabled={
+                      isBuyingBusy ||
+                      !listing.listingId ||
+                      !parseListingId(listing.listingId) ||
+                      !listing.rawPrice
+                    }
+                    key={listing.id}
+                    listing={listing}
+                    onBuyNow={buyNow}
+                  />
+                ))
               )}
             </div>
-          ) : null}
+            {!loading && !hasError && displayListings.length > 0 ? (
+              <div className="flex items-center justify-center" ref={loadMoreRef}>
+                {hasMore ? (
+                  isLoadingMore ? (
+                    <span className="text-sm text-slate-500">
+                      {languageDic.loadingMore}
+                    </span>
+                  ) : (
+                    <Button variant="outline" type="button" onClick={loadMore}>
+                      {languageDic.loadMore}
+                    </Button>
+                  )
+                ) : (
+                  <span className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">
+                    {languageDic.endText}
+                  </span>
+                )}
+              </div>
+            ) : null}
+          </div>
+          <aside className="rounded-[24px] border border-slate-900/10 bg-white/80 p-5">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold uppercase tracking-[0.28em] text-slate-500">
+                {activityCopy.label}
+              </h3>
+              <span className="text-xs font-semibold text-slate-400">
+                {activityCopy.eventSale}
+              </span>
+            </div>
+            <div className="mt-4 space-y-3">
+              {activityLoading ? (
+                <div className="rounded-2xl border border-dashed border-slate-900/10 bg-white/60 p-4 text-center text-sm text-slate-500">
+                  {activityCopy.loadingText}
+                </div>
+              ) : activityHasError ? (
+                <div className="rounded-2xl border border-dashed border-slate-900/10 bg-white/60 p-4 text-center text-sm text-slate-500">
+                  {activityCopy.errorText}
+                </div>
+              ) : activityRows.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-slate-900/10 bg-white/60 p-4 text-center text-sm text-slate-500">
+                  {activityCopy.emptyText}
+                </div>
+              ) : (
+                activityRows.map((row) => (
+                  <div
+                    className="rounded-2xl border border-slate-900/10 bg-white p-4 text-sm text-slate-600"
+                    key={row.id}
+                  >
+                    <div className="flex items-center justify-between text-xs text-slate-500">
+                      <span className="font-semibold uppercase tracking-[0.24em]">
+                        {row.eventLabel}
+                      </span>
+                      <span>{row.timeLabel}</span>
+                    </div>
+                    <div className="mt-2 flex items-center justify-between">
+                      {row.itemLink ? (
+                        <Link
+                          className="font-semibold text-slate-900 hover:text-slate-700"
+                          href={row.itemLink}
+                        >
+                          {row.itemLabel}
+                        </Link>
+                      ) : (
+                        <span className="font-semibold text-slate-900">
+                          {row.itemLabel}
+                        </span>
+                      )}
+                      <span className="text-sm font-semibold text-slate-900">
+                        {row.priceLabel}
+                      </span>
+                    </div>
+                    <div className="mt-2 flex items-center justify-between text-xs text-slate-500">
+                      <span>
+                        {activityCopy.columns.from} {row.fromLabel}
+                      </span>
+                      <span>
+                        {activityCopy.columns.to} {row.toLabel}
+                      </span>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+            {!activityLoading && !activityHasError && activityRows.length > 0 ? (
+              <div className="mt-4 flex items-center justify-center">
+                {activityHasMore ? (
+                  isActivityLoadingMore ? (
+                    <span className="text-sm text-slate-500">
+                      {activityCopy.loadingMore}
+                    </span>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      type="button"
+                      onClick={loadMoreActivity}
+                    >
+                      {activityCopy.loadMore}
+                    </Button>
+                  )
+                ) : (
+                  <span className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">
+                    {activityCopy.endText}
+                  </span>
+                )}
+              </div>
+            ) : null}
+          </aside>
         </div>
       </section>
     </div>

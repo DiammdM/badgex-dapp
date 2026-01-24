@@ -574,6 +574,53 @@ export const marketContent = {
   },
 } as const;
 
+export const marketActivityContent = {
+  en: {
+    label: "Market Activity",
+    title: "Global trade history",
+    description: "Track the latest badge trades across the marketplace.",
+    eventSale: "Sale",
+    badgePrefix: "Badge",
+    unknownBadge: "Unknown badge",
+    columns: {
+      event: "Event",
+      item: "Item",
+      price: "Price",
+      from: "From",
+      to: "To",
+      time: "Time",
+    },
+    loadingText: "Loading activity...",
+    errorText: "Failed to load activity",
+    emptyText: "No trades yet",
+    loadingMore: "Loading more...",
+    loadMore: "Load more",
+    endText: "End of activity",
+  },
+  zh: {
+    label: "市场动态",
+    title: "全站交易记录",
+    description: "追踪市场内最新的徽章交易记录。",
+    eventSale: "成交",
+    badgePrefix: "徽章",
+    unknownBadge: "未知徽章",
+    columns: {
+      event: "事件",
+      item: "徽章",
+      price: "价格",
+      from: "卖家",
+      to: "买家",
+      time: "时间",
+    },
+    loadingText: "正在加载交易记录...",
+    errorText: "加载交易记录失败",
+    emptyText: "暂无交易记录",
+    loadingMore: "加载更多...",
+    loadMore: "加载更多",
+    endText: "没有更多了",
+  },
+} as const;
+
 export const myBadgesContent = {
   en: {
     label: "My Badges",
