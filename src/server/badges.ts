@@ -3,6 +3,10 @@
 import { prisma } from "@src/lib/prisma";
 import {
   BadgeConfig,
+  BadgeDetailRecord,
+  BadgeExploreRecord,
+  BadgeExploreStats,
+  BadgeMarketRecord,
   BadgeListItem,
   BadgeRecordStatus,
   CreateBadgeInput,
@@ -30,6 +34,35 @@ const getCidFromIpfsUrl = (value?: string | null) => {
     return parts[parts.length - 1];
   }
   return undefined;
+};
+
+const parsePriceValue = (value?: string | null) => {
+  if (!value) return null;
+  const numeric = Number.parseFloat(value.replace(/[^0-9.]/g, ""));
+  return Number.isFinite(numeric) ? numeric : null;
+};
+
+const normalizeTokenId = (value: string) => value.trim().replace(/^#/, "");
+
+const matchesConfigFilters = (
+  config: unknown,
+  filters: {
+    category?: string;
+    theme?: string;
+    shape?: string;
+    icon?: string;
+  }
+) => {
+  if (!filters.category && !filters.theme && !filters.shape && !filters.icon) {
+    return true;
+  }
+  if (!config || typeof config !== "object") return false;
+  const data = config as Record<string, unknown>;
+  if (filters.category && data.Category !== filters.category) return false;
+  if (filters.theme && data.Theme !== filters.theme) return false;
+  if (filters.shape && data.Shape !== filters.shape) return false;
+  if (filters.icon && data.Icon !== filters.icon) return false;
+  return true;
 };
 
 const buildBadgeMetadata = (
@@ -96,6 +129,339 @@ export const listBadgesForUser = async (
       imageUrl,
     };
   });
+};
+
+const buildExploreStats = async ({
+  search,
+  category,
+  theme,
+  shape,
+  icon,
+}: {
+  search?: string;
+  category?: string;
+  theme?: string;
+  shape?: string;
+  icon?: string;
+}): Promise<BadgeExploreStats> => {
+  const where = {
+    status: {
+      in: [BadgeRecordStatus.Minted, BadgeRecordStatus.Listed],
+    },
+    AND: search
+      ? [
+          {
+            OR: [
+              { name: { contains: search } },
+              { tokenId: { contains: search } },
+            ],
+          },
+        ]
+      : undefined,
+  };
+
+  const records = await prisma.badgeRecord.findMany({
+    where,
+    select: {
+      userId: true,
+      status: true,
+      price: true,
+      updatedAt: true,
+      config: true,
+    },
+  });
+
+  const filtered = records.filter((record) =>
+    matchesConfigFilters(record.config, { category, theme, shape, icon })
+  );
+
+  let floorPrice: { value: number; raw: string } | null = null;
+  let latestMint = 0;
+  const owners = new Set<string>();
+
+  filtered.forEach((record) => {
+    owners.add(record.userId);
+    if (record.status === BadgeRecordStatus.Listed) {
+      const parsed = parsePriceValue(record.price);
+      if (parsed !== null && record.price) {
+        if (!floorPrice || parsed < floorPrice.value) {
+          floorPrice = { value: parsed, raw: record.price };
+        }
+      }
+    }
+    const timestamp = record.updatedAt.getTime();
+    if (timestamp > latestMint) {
+      latestMint = timestamp;
+    }
+  });
+
+  return {
+    mintedSupply: filtered.length,
+    uniqueOwners: owners.size,
+    floorPrice: floorPrice ? floorPrice.raw : null,
+    latestMint: latestMint ? new Date(latestMint).toISOString() : null,
+  };
+};
+
+export const listExploreBadges = async ({
+  limit,
+  offset,
+  search,
+  category,
+  theme,
+  shape,
+  icon,
+}: {
+  limit: number;
+  offset: number;
+  search?: string;
+  category?: string;
+  theme?: string;
+  shape?: string;
+  icon?: string;
+}): Promise<{
+  badges: BadgeExploreRecord[];
+  hasMore: boolean;
+  nextOffset: number;
+  stats: BadgeExploreStats;
+}> => {
+  const where = {
+    status: {
+      in: [BadgeRecordStatus.Minted, BadgeRecordStatus.Listed],
+    },
+    AND: search
+      ? [
+          {
+            OR: [
+              { name: { contains: search } },
+              { tokenId: { contains: search } },
+            ],
+          },
+        ]
+      : undefined,
+  };
+
+  const prefix = normalizeIpfsPrefix(IPFS_PIC_PREFIX);
+  const stats = await buildExploreStats({
+    search,
+    category,
+    theme,
+    shape,
+    icon,
+  });
+  const chunkSize = Math.max(limit * 2, 20);
+  let scanOffset = offset;
+  let hasMore = true;
+  let reachedLimit = false;
+  const matches: BadgeExploreRecord[] = [];
+
+  while (matches.length < limit) {
+    const records = await prisma.badgeRecord.findMany({
+      where,
+      orderBy: {
+        updatedAt: "desc",
+      },
+      skip: scanOffset,
+      take: chunkSize,
+      select: {
+        id: true,
+        name: true,
+        userId: true,
+        status: true,
+        config: true,
+        tokenId: true,
+        price: true,
+        imageCid: true,
+        ipfsUrl: true,
+        updatedAt: true,
+      },
+    });
+
+    if (records.length === 0) {
+      hasMore = false;
+      break;
+    }
+
+    let consumed = 0;
+    for (const record of records) {
+      consumed += 1;
+      if (
+        !matchesConfigFilters(record.config, { category, theme, shape, icon })
+      ) {
+        continue;
+      }
+      const imageCid = record.imageCid ?? getCidFromIpfsUrl(record.ipfsUrl);
+      const imageUrl = imageCid && prefix ? `${prefix}${imageCid}` : null;
+      matches.push({
+        id: record.id,
+        name: record.name,
+        owner: record.userId,
+        status: record.status as BadgeRecordStatus,
+        config: record.config as Partial<BadgeConfig> | null,
+        tokenId: record.tokenId,
+        price: record.price,
+        imageUrl,
+        updatedAt: record.updatedAt.toISOString(),
+      });
+      if (matches.length >= limit) {
+        scanOffset += consumed;
+        hasMore = consumed < records.length || records.length === chunkSize;
+        reachedLimit = true;
+        break;
+      }
+    }
+
+    if (reachedLimit) {
+      break;
+    }
+
+    scanOffset += records.length;
+    if (records.length < chunkSize) {
+      hasMore = false;
+      break;
+    }
+  }
+
+  return {
+    badges: matches,
+    hasMore,
+    nextOffset: scanOffset,
+    stats,
+  };
+};
+
+export const listMarketBadges = async ({
+  limit,
+  offset,
+  search,
+}: {
+  limit: number;
+  offset: number;
+  search?: string;
+}): Promise<{
+  badges: BadgeMarketRecord[];
+  hasMore: boolean;
+  nextOffset: number;
+}> => {
+  const where = {
+    status: BadgeRecordStatus.Listed,
+    AND: search
+      ? [
+          {
+            OR: [
+              { name: { contains: search } },
+              { tokenId: { contains: search } },
+            ],
+          },
+        ]
+      : undefined,
+  };
+
+  const prefix = normalizeIpfsPrefix(IPFS_PIC_PREFIX);
+  const records = await prisma.badgeRecord.findMany({
+    where,
+    orderBy: {
+      updatedAt: "desc",
+    },
+    skip: offset,
+    take: limit + 1,
+    select: {
+      id: true,
+      name: true,
+      userId: true,
+      status: true,
+      config: true,
+      tokenId: true,
+      price: true,
+      listingId: true,
+      imageCid: true,
+      ipfsUrl: true,
+      updatedAt: true,
+    },
+  });
+
+  const hasMore = records.length > limit;
+  const slice = hasMore ? records.slice(0, limit) : records;
+  const badges = slice.map((record) => {
+    const imageCid = record.imageCid ?? getCidFromIpfsUrl(record.ipfsUrl);
+    const imageUrl = imageCid && prefix ? `${prefix}${imageCid}` : null;
+    return {
+      id: record.id,
+      name: record.name,
+      owner: record.userId,
+      status: record.status as BadgeRecordStatus,
+      config: record.config as Partial<BadgeConfig> | null,
+      tokenId: record.tokenId,
+      price: record.price,
+      listingId: record.listingId,
+      imageUrl,
+      updatedAt: record.updatedAt.toISOString(),
+    };
+  });
+
+  return {
+    badges,
+    hasMore,
+    nextOffset: offset + badges.length,
+  };
+};
+
+export const getExploreBadgeByTokenId = async (
+  tokenId: string
+): Promise<BadgeDetailRecord | null> => {
+  const normalized = normalizeTokenId(tokenId);
+  if (!normalized) return null;
+
+  const record = await prisma.badgeRecord.findFirst({
+    where: {
+      status: {
+        in: [BadgeRecordStatus.Minted, BadgeRecordStatus.Listed],
+      },
+      OR: [{ tokenId: normalized }, { tokenId: `#${normalized}` }],
+    },
+    select: {
+      id: true,
+      name: true,
+      description: true,
+      userId: true,
+      status: true,
+      config: true,
+      tokenId: true,
+      tokenUri: true,
+      ipfsUrl: true,
+      listingId: true,
+      price: true,
+      imageCid: true,
+      metadataCid: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  });
+
+  if (!record) return null;
+
+  const prefix = normalizeIpfsPrefix(IPFS_PIC_PREFIX);
+  const imageCid = record.imageCid ?? getCidFromIpfsUrl(record.ipfsUrl);
+  const imageUrl = imageCid && prefix ? `${prefix}${imageCid}` : null;
+
+  return {
+    id: record.id,
+    name: record.name,
+    description: record.description,
+    owner: record.userId,
+    status: record.status as BadgeRecordStatus,
+    config: record.config as Partial<BadgeConfig> | null,
+    tokenId: record.tokenId,
+    tokenUri: record.tokenUri,
+    ipfsUrl: record.ipfsUrl,
+    listingId: record.listingId,
+    price: record.price,
+    imageUrl,
+    imageCid,
+    metadataCid: record.metadataCid,
+    createdAt: record.createdAt.toISOString(),
+    updatedAt: record.updatedAt.toISOString(),
+  };
 };
 
 export const createBadgeForUser = async ({
@@ -193,5 +559,26 @@ export const updateBadgeStatusByTokenUri = async ({
       tokenUri,
     },
     data,
+  });
+};
+
+export const finalizeMarketPurchase = async ({
+  badgeId,
+  buyer,
+}: {
+  badgeId: string;
+  buyer: string;
+}) => {
+  return prisma.badgeRecord.updateMany({
+    where: {
+      id: badgeId,
+      status: BadgeRecordStatus.Listed,
+    },
+    data: {
+      userId: buyer,
+      status: BadgeRecordStatus.Minted,
+      listingId: null,
+      price: null,
+    },
   });
 };

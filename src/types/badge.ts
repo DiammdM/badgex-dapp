@@ -52,6 +52,57 @@ export type CreateBadgeInput = {
   config: BadgeConfig;
 };
 
+export type BadgeExploreRecord = {
+  id: string;
+  name: string;
+  owner: string;
+  status: BadgeRecordStatus;
+  config?: Partial<BadgeConfig> | null;
+  tokenId?: string | null;
+  price?: string | null;
+  imageUrl?: string | null;
+  updatedAt: string;
+};
+
+export type BadgeMarketRecord = {
+  id: string;
+  name: string;
+  owner: string;
+  status: BadgeRecordStatus;
+  config?: Partial<BadgeConfig> | null;
+  tokenId?: string | null;
+  price?: string | null;
+  listingId?: string | null;
+  imageUrl?: string | null;
+  updatedAt: string;
+};
+
+export type BadgeExploreStats = {
+  mintedSupply: number;
+  uniqueOwners: number;
+  floorPrice: string | null;
+  latestMint: string | null;
+};
+
+export type BadgeDetailRecord = {
+  id: string;
+  name: string;
+  description?: string | null;
+  owner: string;
+  status: BadgeRecordStatus;
+  config?: Partial<BadgeConfig> | null;
+  tokenId?: string | null;
+  tokenUri?: string | null;
+  ipfsUrl?: string | null;
+  listingId?: string | null;
+  price?: string | null;
+  imageUrl?: string | null;
+  imageCid?: string | null;
+  metadataCid?: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type Metadata = {
   name: string;
   description?: string;
