@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Monitor, Moon, Sun } from "lucide-react";
 import { useLanguage } from "@src/components/LanguageProvider";
 import { layoutCopy } from "../app/i18n";
 import LanguageSwitch from "./LanguageSwitch";
@@ -82,7 +83,7 @@ export default function LayoutShell({
         {children}
       </main>
       <footer className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-900/10 bg-white/70 backdrop-blur">
-        <div className="mx-auto flex w-full max-w-[1440px] items-center justify-between gap-4 px-6 py-2 text-xs text-slate-500">
+        <div className="mx-auto flex w-full max-w-[1440px] items-center justify-between gap-4 px-6 py-0 text-xs text-slate-500">
           <div className="flex items-center gap-3">
             <span className="inline-flex h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_0_4px_rgba(16,185,129,0.12)]" />
             <span className="font-semibold text-slate-800">
@@ -92,16 +93,44 @@ export default function LayoutShell({
               {copy.footerTagline}
             </span>
           </div>
-          <div className="hidden items-center gap-4 text-[11px] uppercase tracking-[0.2em] text-slate-400 md:flex">
-            <Link className="transition hover:text-slate-700" href="/builder">
-              {copy.footerLinks.build}
-            </Link>
-            <Link className="transition hover:text-slate-700" href="/market">
-              {copy.footerLinks.market}
-            </Link>
-            <Link className="transition hover:text-slate-700" href="/my-badges">
-              {copy.footerLinks.manage}
-            </Link>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1 rounded-full border border-slate-900/10 bg-white/80 p-0.5 shadow-sm">
+              <button
+                aria-label="Light theme"
+                className="flex h-5 w-5 items-center justify-center rounded-full text-slate-500 transition hover:text-slate-900"
+                type="button"
+              >
+                <Sun className="h-4 w-4" />
+              </button>
+              <button
+                aria-label="Dark theme"
+                className="flex h- w-5 items-center justify-center rounded-full text-slate-500 transition hover:text-slate-900"
+                type="button"
+              >
+                <Moon className="h-4 w-4" />
+              </button>
+              <button
+                aria-label="Auto theme"
+                className="flex h-5 w-5 items-center justify-center rounded-full bg-slate-900 text-amber-100 shadow-sm"
+                type="button"
+              >
+                <Monitor className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="hidden items-center gap-4 text-[11px] uppercase tracking-[0.2em] text-slate-400 md:flex">
+              <Link className="transition hover:text-slate-700" href="/builder">
+                {copy.footerLinks.build}
+              </Link>
+              <Link className="transition hover:text-slate-700" href="/market">
+                {copy.footerLinks.market}
+              </Link>
+              <Link
+                className="transition hover:text-slate-700"
+                href="/my-badges"
+              >
+                {copy.footerLinks.manage}
+              </Link>
+            </div>
           </div>
         </div>
       </footer>
