@@ -33,7 +33,7 @@ export function BadgeLibrarySection({
 }: BadgeLibrarySectionProps) {
   return (
     <section
-      className="rounded-[28px] border border-slate-900/10 bg-white/75 p-6 animate-[fade-in-up_0.6s_ease-out_both]"
+      className="rounded-[28px] p-6 animate-[fade-in-up_0.6s_ease-out_both]"
       style={{ animationDelay: "120ms" }}
     >
       <div className="flex flex-wrap items-center justify-between gap-4">
@@ -56,11 +56,22 @@ export function BadgeLibrarySection({
           ))}
         </div>
       </div>
-      <div className="mt-6 grid gap-6 lg:grid-cols-2">
+      <div className="mt-6 grid gap-6 grid-cols-[repeat(auto-fit,_minmax(280px,_1fr))]">
         {badges.map((badge) => {
           const detailId = badge.tokenId
             ? badge.tokenId.replace("#", "")
             : badge.id;
+          const tokenIdLabel = badge.tokenId ? `#${badge.tokenId}` : "--";
+          const listingPriceLabel =
+            badge.status === "listed"
+              ? badge.price
+                ? `${badge.price} ETH`
+                : "--"
+              : languageDic.actions.notListed;
+          const tokenIdDetail = badge.tokenId
+            ? `${tokenIdLabel} - ${listingPriceLabel}`
+            : "--";
+          const listingIdDetail = badge.listingId ?? "--";
           return (
             <div
               className="flex flex-col gap-4 rounded-[24px] border border-slate-900/10 bg-white p-5 shadow-sm"
@@ -106,29 +117,22 @@ export function BadgeLibrarySection({
                     {badge.updated}
                   </p>
                 </div>
-                {badge.tokenId ? (
-                  <div className="rounded-2xl border border-slate-900/10 bg-slate-50/80 p-3 sm:col-span-2">
-                    <p className="uppercase tracking-[0.28em]">
-                      {languageDic.cardLabels.tokenId}
-                    </p>
-                    <p className="mt-1 text-sm font-semibold text-slate-900">
-                      {`#${badge.tokenId}`} -{" "}
-                      {badge.status === "listed"
-                        ? `${badge.price} ETH`
-                        : languageDic.actions.notListed}
-                    </p>
-                  </div>
-                ) : null}
-                {badge.listingId ? (
-                  <div className="rounded-2xl border border-slate-900/10 bg-slate-50/80 p-3 sm:col-span-2">
-                    <p className="uppercase tracking-[0.28em]">
-                      {languageDic.cardLabels.listing}
-                    </p>
-                    <p className="mt-1 text-sm font-semibold text-slate-900">
-                      {badge.listingId}
-                    </p>
-                  </div>
-                ) : null}
+                <div className="rounded-2xl border border-slate-900/10 bg-slate-50/80 p-3 sm:col-span-2">
+                  <p className="uppercase tracking-[0.28em]">
+                    {languageDic.cardLabels.tokenId}
+                  </p>
+                  <p className="mt-1 text-sm font-semibold text-slate-900">
+                    {tokenIdDetail}
+                  </p>
+                </div>
+                <div className="rounded-2xl border border-slate-900/10 bg-slate-50/80 p-3 sm:col-span-2">
+                  <p className="uppercase tracking-[0.28em]">
+                    {languageDic.cardLabels.listing}
+                  </p>
+                  <p className="mt-1 text-sm font-semibold text-slate-900">
+                    {listingIdDetail}
+                  </p>
+                </div>
               </div>
               <div className="flex flex-wrap gap-3">
                 {badge.status === "draft" ? (
@@ -153,7 +157,7 @@ export function BadgeLibrarySection({
                 ) : null}
                 {badge.status === "listed" ? (
                   <button
-                    className="rounded-full bg-amber-100 px-4 py-2 text-xs font-semibold text-amber-900 cursor-pointer"
+                    className="rounded-full bg-rose-100 px-4 py-2 text-xs font-semibold text-rose-900 cursor-pointer"
                     disabled={isListingBusy}
                     type="button"
                     onClick={() => {

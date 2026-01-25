@@ -567,7 +567,7 @@ export default function BuilderPage() {
                   {displayText}
                 </p>
               </div>
-              <div className="rounded-2xl border border-slate-900/10 bg-slate-50/80 p-4 text-sm sm:col-span-2">
+              <div className="rounded-2xl border border-slate-900/10 bg-slate-50/80 p-4 text-sm">
                 <p className="text-xs uppercase tracking-[0.3em] text-slate-500">
                   {languageDic.summary.category}
                 </p>
@@ -593,25 +593,6 @@ export default function BuilderPage() {
             </div>
           </div>
 
-          <div className="rounded-[28px] border border-slate-900/10 bg-white/80 p-6">
-            <h3 className="text-lg font-semibold text-slate-900">
-              {languageDic.afterSaveTitle}
-            </h3>
-            <ul className="mt-4 space-y-3 text-sm text-slate-600">
-              {languageDic.afterSaveSteps.map((step) => (
-                <li key={step}>{step}</li>
-              ))}
-            </ul>
-            <div className="mt-5 rounded-2xl border border-dashed border-amber-300 bg-amber-50/80 p-4 text-xs text-amber-900">
-              {languageDic.afterSaveNote}
-            </div>
-            <Link
-              className="mt-6 inline-flex items-center text-sm font-semibold text-slate-900"
-              href="/my-badges"
-            >
-              {languageDic.afterSaveCta}
-            </Link>
-          </div>
         </div>
       </section>
     </div>

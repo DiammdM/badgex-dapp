@@ -453,7 +453,8 @@ export const listMarketPurchases = async ({
     }
   });
 
-  const badgeNames = new Map<string, string>();
+  const prefix = normalizeIpfsPrefix(IPFS_PIC_PREFIX);
+  const badgeMeta = new Map<string, { name: string; imageUrl: string | null }>();
   if (tokenLookup.size > 0) {
     const badges = await prisma.badgeRecord.findMany({
       where: {
@@ -462,13 +463,17 @@ export const listMarketPurchases = async ({
       select: {
         name: true,
         tokenId: true,
+        imageCid: true,
+        ipfsUrl: true,
       },
     });
     badges.forEach((badge) => {
       if (!badge.tokenId) return;
       const normalized = normalizeTokenId(badge.tokenId);
-      if (normalized && !badgeNames.has(normalized)) {
-        badgeNames.set(normalized, badge.name);
+      if (normalized && !badgeMeta.has(normalized)) {
+        const imageCid = badge.imageCid ?? getCidFromIpfsUrl(badge.ipfsUrl);
+        const imageUrl = imageCid && prefix ? `${prefix}${imageCid}` : null;
+        badgeMeta.set(normalized, { name: badge.name, imageUrl });
       }
     });
   }
@@ -478,10 +483,12 @@ export const listMarketPurchases = async ({
       typeof record.tokenId === "string"
         ? normalizeTokenId(record.tokenId)
         : "";
+    const meta = normalized ? badgeMeta.get(normalized) : null;
     return {
       id: record.id,
       tokenId: record.tokenId ?? null,
-      badgeName: normalized ? badgeNames.get(normalized) ?? null : null,
+      badgeName: normalized ? meta?.name ?? null : null,
+      imageUrl: normalized ? meta?.imageUrl ?? null : null,
       buyer: record.buyer,
       seller: record.seller,
       price: record.price ?? null,

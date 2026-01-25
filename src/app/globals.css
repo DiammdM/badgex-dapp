@@ -98,6 +98,19 @@ body {
   color: #1b1a16;
 }
 
+.scrollbar-hidden {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.scrollbar-hidden::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hidden [data-slot="scroll-area-scrollbar"] {
+  display: none;
+}
+
 @keyframes fade-in-up {
   from {
     opacity: 0;

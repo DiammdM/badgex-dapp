@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { BadgeCheck, Search, Sparkles, Tag, Users } from "lucide-react";
 import { useLanguage } from "@src/components/LanguageProvider";
 import { badgesContent } from "../i18n";
 import {
@@ -38,6 +39,8 @@ const parsePriceValue = (value?: string | null) => {
 };
 
 const PAGE_SIZE = 9;
+const FILTER_BUTTON_CLASS =
+  "h-8 rounded-full border border-slate-900/10 bg-white px-3 text-xs font-semibold text-slate-600 shadow-none transition hover:border-slate-900/20 hover:text-slate-900 data-[active=true]:border-slate-900 data-[active=true]:bg-slate-900 data-[active=true]:text-amber-100";
 
 export default function BadgesPage() {
   const { language } = useLanguage();
@@ -305,102 +308,194 @@ export default function BadgesPage() {
   }, [badges, copy.stats, locale, loading, stats]);
 
   return (
-    <div className="space-y-10">
-      <section className="grid animate-[fade-in-up_0.6s_ease-out_both] gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
-        <div className="space-y-3">
-          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">
-            {copy.label}
-          </p>
-          <h1 className="text-3xl font-[var(--font-display)] text-slate-900 sm:text-4xl">
-            {copy.title}
-          </h1>
-          <p className="max-w-2xl text-base leading-7 text-slate-600">
-            {copy.description}
-          </p>
-        </div>
-        <div className="rounded-[28px] border border-slate-900/10 bg-white/75 p-6">
+    <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
+      <aside
+        className="lg:fixed lg:top-24 lg:bottom-10 lg:w-[320px]"
+        style={{
+          left: "max(1.5rem, calc((100vw - 1440px) / 2 + 1.5rem))",
+        }}
+      >
+        <div className="rounded-[28px] border border-slate-900/10 bg-white/75 p-6 animate-[fade-in-up_0.6s_ease-out_both] lg:h-full lg:overflow-y-auto">
           <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">
             {copy.toolsTitle}
           </p>
-          <div className="mt-4 flex flex-wrap gap-3">
-            <input
-              className="w-56 rounded-full border border-slate-900/10 bg-white px-4 py-2 text-sm"
-              placeholder={copy.searchPlaceholder}
-              type="text"
-              value={searchTerm}
-              onChange={(event) => setSearchTerm(event.target.value)}
-            />
-            <select
-              className="rounded-full border border-slate-900/10 bg-white px-4 py-2 text-sm"
-              value={categoryFilter}
-              onChange={(event) => setCategoryFilter(event.target.value)}
-            >
-              <option value="all">{copy.filters.category}</option>
-              {BADGE_CATEGORY_OPTIONS.map((option) => (
-                <option key={option.id} value={option.id}>
-                  {option.labels[language]}
-                </option>
-              ))}
-            </select>
-            <select
-              className="rounded-full border border-slate-900/10 bg-white px-4 py-2 text-sm"
-              value={themeFilter}
-              onChange={(event) => setThemeFilter(event.target.value)}
-            >
-              <option value="all">{copy.filters.theme}</option>
-              {BADGE_THEME_OPTIONS.map((option) => (
-                <option key={option.id} value={option.id}>
-                  {option.labels[language]}
-                </option>
-              ))}
-            </select>
-            <select
-              className="rounded-full border border-slate-900/10 bg-white px-4 py-2 text-sm"
-              value={shapeFilter}
-              onChange={(event) => setShapeFilter(event.target.value)}
-            >
-              <option value="all">{copy.filters.shape}</option>
-              {BADGE_SHAPE_OPTIONS.map((option) => (
-                <option key={option.id} value={option.id}>
-                  {option.labels[language]}
-                </option>
-              ))}
-            </select>
-            <select
-              className="rounded-full border border-slate-900/10 bg-white px-4 py-2 text-sm"
-              value={iconFilter}
-              onChange={(event) => setIconFilter(event.target.value)}
-            >
-              <option value="all">{copy.filters.icon}</option>
-              {BADGE_ICON_OPTIONS.map((option) => (
-                <option key={option.id} value={option.id}>
-                  {option.labels[language]}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
-            {statsItems.map((item) => (
-              <div
-                className="rounded-2xl border border-slate-900/10 bg-slate-50/80 p-4"
-                key={item.label}
-              >
-                <p className="text-xs uppercase tracking-[0.28em] text-slate-500">
-                  {item.label}
+          <div className="mt-4 grid gap-4">
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <input
+                className="w-full rounded-full border border-slate-900/10 bg-white px-4 py-2 pl-9 text-sm"
+                placeholder={copy.searchPlaceholder}
+                type="search"
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
+              />
+            </div>
+            <div className="grid gap-4">
+              <div className="grid gap-2">
+                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
+                  {copy.filters.categoryLabel}
                 </p>
-                <p className="mt-2 font-semibold text-slate-900">
-                  {item.value}
-                </p>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    className={FILTER_BUTTON_CLASS}
+                    data-active={categoryFilter === "all"}
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCategoryFilter("all")}
+                  >
+                    {copy.filters.allLabel}
+                  </Button>
+                  {BADGE_CATEGORY_OPTIONS.map((option) => (
+                    <Button
+                      className={FILTER_BUTTON_CLASS}
+                      data-active={categoryFilter === option.id}
+                      key={option.id}
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCategoryFilter(option.id)}
+                    >
+                      {option.labels[language]}
+                    </Button>
+                  ))}
+                </div>
               </div>
-            ))}
+              <div className="grid gap-2">
+                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
+                  {copy.filters.themeLabel}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    className={FILTER_BUTTON_CLASS}
+                    data-active={themeFilter === "all"}
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setThemeFilter("all")}
+                  >
+                    {copy.filters.allLabel}
+                  </Button>
+                  {BADGE_THEME_OPTIONS.map((option) => (
+                    <Button
+                      className={FILTER_BUTTON_CLASS}
+                      data-active={themeFilter === option.id}
+                      key={option.id}
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setThemeFilter(option.id)}
+                    >
+                      <span
+                        className={`h-2 w-2 rounded-full ${option.accentClass}`}
+                      />
+                      {option.labels[language]}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+              <div className="grid gap-2">
+                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
+                  {copy.filters.shapeLabel}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    className={FILTER_BUTTON_CLASS}
+                    data-active={shapeFilter === "all"}
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShapeFilter("all")}
+                  >
+                    {copy.filters.allLabel}
+                  </Button>
+                  {BADGE_SHAPE_OPTIONS.map((option) => (
+                    <Button
+                      className={FILTER_BUTTON_CLASS}
+                      data-active={shapeFilter === option.id}
+                      key={option.id}
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShapeFilter(option.id)}
+                    >
+                      {option.labels[language]}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+              <div className="grid gap-2">
+                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
+                  {copy.filters.iconLabel}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    className={FILTER_BUTTON_CLASS}
+                    data-active={iconFilter === "all"}
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIconFilter("all")}
+                  >
+                    {copy.filters.allLabel}
+                  </Button>
+                  {BADGE_ICON_OPTIONS.map((option) => (
+                    <Button
+                      className={FILTER_BUTTON_CLASS}
+                      data-active={iconFilter === option.id}
+                      key={option.id}
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setIconFilter(option.id)}
+                    >
+                      {option.labels[language]}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-      </section>
+      </aside>
 
       <section
-        className="grid animate-[fade-in-up_0.6s_ease-out_both] gap-6 md:grid-cols-2 xl:grid-cols-3"
+        className="grid animate-[fade-in-up_0.6s_ease-out_both] gap-6 md:grid-cols-2 xl:grid-cols-3 lg:col-start-2 lg:pl-[40px]"
         style={{ animationDelay: "120ms" }}
       >
+        <div className="col-span-full grid gap-4 text-sm sm:grid-cols-2 xl:grid-cols-4">
+          {statsItems.map((item, index) => {
+            const iconSet = [BadgeCheck, Users, Tag, Sparkles] as const;
+            const accentSet = [
+              "bg-emerald-100 text-emerald-700",
+              "bg-sky-100 text-sky-700",
+              "bg-amber-100 text-amber-700",
+              "bg-violet-100 text-violet-700",
+            ] as const;
+            const Icon = iconSet[index % iconSet.length];
+            const accent = accentSet[index % accentSet.length];
+            return (
+              <div
+                className="flex items-center gap-3 rounded-3xl border border-slate-900/10 bg-white/80 p-4 shadow-sm"
+                key={item.label}
+              >
+                <div
+                  className={`flex h-10 w-10 items-center justify-center rounded-2xl ${accent}`}
+                >
+                  <Icon className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-[0.24em] text-slate-500">
+                    {item.label}
+                  </p>
+                  <p className="mt-1 text-lg font-semibold text-slate-900">
+                    {item.value}
+                  </p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
         {loading ? (
           <div className="col-span-full rounded-[26px] border border-dashed border-slate-900/10 bg-white/60 p-8 text-center text-sm text-slate-500">
             {copy.loadingText}

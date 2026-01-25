@@ -1,7 +1,9 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { UIEvent } from "react";
 import { useLanguage } from "@src/components/LanguageProvider";
 import { global, marketActivityContent, marketContent } from "../i18n";
 import {
@@ -33,10 +35,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@src/components/ui/alert-dialog";
+import { ScrollArea } from "@src/components/ui/scroll-area";
 import { MarketListingCard, type MarketListing } from "./MarketListingCard";
 
-const PAGE_SIZE = 6;
-const ACTIVITY_PAGE_SIZE = 6;
+const PAGE_SIZE = 10;
+const ACTIVITY_PAGE_SIZE = 10;
 const DEFAULT_ROYALTY = "2.5%";
 
 const BADGE_MARKETPLACE_ADDRESS = process.env
@@ -319,31 +322,65 @@ export default function MarketPage() {
     []
   );
 
-  const loadActivity = useCallback(async (nextOffset: number, initial: boolean) => {
-    if (initial) {
-      activityAbortRef.current?.abort();
-      const controller = new AbortController();
-      activityAbortRef.current = controller;
-      setActivityLoading(true);
-      setActivityHasError(false);
-      setActivityHasMore(true);
-      setActivityOffset(0);
-      setActivityRecords([]);
+  const loadActivity = useCallback(
+    async (nextOffset: number, initial: boolean) => {
+      if (initial) {
+        activityAbortRef.current?.abort();
+        const controller = new AbortController();
+        activityAbortRef.current = controller;
+        setActivityLoading(true);
+        setActivityHasError(false);
+        setActivityHasMore(true);
+        setActivityOffset(0);
+        setActivityRecords([]);
+        try {
+          const params = new URLSearchParams({
+            offset: String(nextOffset),
+            limit: String(ACTIVITY_PAGE_SIZE),
+          });
+          const response = await fetch(
+            `/api/badges/market/activity?${params.toString()}`,
+            { signal: controller.signal }
+          );
+          if (!response.ok) {
+            throw new Error("Failed to load market activity");
+          }
+          const data = await response.json();
+          const nextRecords = Array.isArray(data?.records) ? data.records : [];
+          setActivityRecords(nextRecords);
+          setActivityHasMore(Boolean(data?.hasMore));
+          setActivityOffset(
+            typeof data?.nextOffset === "number"
+              ? data.nextOffset
+              : nextOffset + nextRecords.length
+          );
+        } catch (error) {
+          if ((error as { name?: string }).name !== "AbortError") {
+            console.error(error);
+            setActivityHasError(true);
+            setActivityRecords([]);
+          }
+        } finally {
+          setActivityLoading(false);
+        }
+        return;
+      }
+
+      setIsActivityLoadingMore(true);
       try {
         const params = new URLSearchParams({
           offset: String(nextOffset),
           limit: String(ACTIVITY_PAGE_SIZE),
         });
         const response = await fetch(
-          `/api/badges/market/activity?${params.toString()}`,
-          { signal: controller.signal }
+          `/api/badges/market/activity?${params.toString()}`
         );
         if (!response.ok) {
           throw new Error("Failed to load market activity");
         }
         const data = await response.json();
         const nextRecords = Array.isArray(data?.records) ? data.records : [];
-        setActivityRecords(nextRecords);
+        setActivityRecords((prev) => [...prev, ...nextRecords]);
         setActivityHasMore(Boolean(data?.hasMore));
         setActivityOffset(
           typeof data?.nextOffset === "number"
@@ -351,44 +388,13 @@ export default function MarketPage() {
             : nextOffset + nextRecords.length
         );
       } catch (error) {
-        if ((error as { name?: string }).name !== "AbortError") {
-          console.error(error);
-          setActivityHasError(true);
-          setActivityRecords([]);
-        }
+        console.error(error);
       } finally {
-        setActivityLoading(false);
+        setIsActivityLoadingMore(false);
       }
-      return;
-    }
-
-    setIsActivityLoadingMore(true);
-    try {
-      const params = new URLSearchParams({
-        offset: String(nextOffset),
-        limit: String(ACTIVITY_PAGE_SIZE),
-      });
-      const response = await fetch(
-        `/api/badges/market/activity?${params.toString()}`
-      );
-      if (!response.ok) {
-        throw new Error("Failed to load market activity");
-      }
-      const data = await response.json();
-      const nextRecords = Array.isArray(data?.records) ? data.records : [];
-      setActivityRecords((prev) => [...prev, ...nextRecords]);
-      setActivityHasMore(Boolean(data?.hasMore));
-      setActivityOffset(
-        typeof data?.nextOffset === "number"
-          ? data.nextOffset
-          : nextOffset + nextRecords.length
-      );
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setIsActivityLoadingMore(false);
-    }
-  }, []);
+    },
+    []
+  );
 
   const loadMore = useCallback(() => {
     if (loading || isLoadingMore || !hasMore) return;
@@ -405,6 +411,18 @@ export default function MarketPage() {
     isActivityLoadingMore,
     loadActivity,
   ]);
+
+  const handleActivityScroll = useCallback(
+    (event: UIEvent<HTMLDivElement>) => {
+      const target = event.currentTarget;
+      const remaining =
+        target.scrollHeight - target.scrollTop - target.clientHeight;
+      if (remaining <= 72) {
+        loadMoreActivity();
+      }
+    },
+    [loadMoreActivity]
+  );
 
   useEffect(() => {
     void loadListings(0, true, debouncedSearch);
@@ -599,11 +617,18 @@ export default function MarketPage() {
         record.badgeName?.trim() || tokenLabel !== "--"
           ? record.badgeName ?? `${activityCopy.badgePrefix} ${tokenLabel}`
           : activityCopy.unknownBadge;
+      const previewLabel = tokenLabel !== "--" ? tokenLabel : itemLabel;
       const linkId = normalizeTokenId(record.tokenId);
+      const imageUrl =
+        typeof record.imageUrl === "string" && record.imageUrl.trim()
+          ? record.imageUrl
+          : null;
       return {
         id: record.id,
         eventLabel: activityCopy.eventSale,
         itemLabel,
+        previewLabel,
+        imageUrl,
         itemLink: linkId ? `/badges/${linkId}` : null,
         priceLabel: formatPriceLabel(record.price),
         fromLabel: formatAddress(record.seller),
@@ -702,253 +727,236 @@ export default function MarketPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      <section className="grid animate-[fade-in-up_0.6s_ease-out_both] gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-        <div className="space-y-4">
-          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">
-            {languageDic.label}
-          </p>
-          <h1 className="text-3xl font-[var(--font-display)] text-slate-900 sm:text-4xl">
-            {languageDic.title}
-          </h1>
-          <p className="max-w-2xl text-base leading-7 text-slate-600">
-            {languageDic.description}
-          </p>
-        </div>
-        <div className="rounded-[28px] border border-slate-900/10 bg-white/75 p-6">
-          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">
-            {languageDic.snapshot}
-          </p>
-          <div className="mt-4 grid gap-4 sm:grid-cols-3">
-            {languageDic.stats.map((item) => (
-              <div
-                className="rounded-2xl border border-slate-900/10 bg-slate-50/80 p-4 text-sm"
-                key={item.label}
-              >
-                <p className="text-xs uppercase tracking-[0.28em] text-slate-500">
-                  {item.label}
-                </p>
-                <p className="mt-2 font-semibold text-slate-900">
-                  {item.value}
-                </p>
-              </div>
-            ))}
-          </div>
-          <div className="mt-4 flex flex-wrap gap-2 text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
-            <span className="rounded-full border border-slate-900/10 bg-white/70 px-3 py-1">
-              {languageDic.feePill}
-            </span>
-          </div>
-        </div>
-      </section>
-
-      <section
-        className="rounded-[28px] border border-slate-900/10 bg-white/75 p-6 animate-[fade-in-up_0.6s_ease-out_both]"
-        style={{ animationDelay: "120ms" }}
-      >
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <h2 className="text-lg font-semibold text-slate-900">
-            {languageDic.latestTitle}
-          </h2>
-          <div className="flex flex-wrap gap-3">
-            <input
-              className="w-48 rounded-full border border-slate-900/10 bg-white px-4 py-2 text-sm"
-              placeholder={languageDic.searchPlaceholder}
-              type="text"
-              value={searchTerm}
-              onChange={(event) => setSearchTerm(event.target.value)}
-            />
-            <select
-              className="rounded-full border border-slate-900/10 bg-white px-4 py-2 text-sm cursor-pointer"
-              value={sortKey}
-              onChange={(event) => setSortKey(event.target.value)}
-            >
-              {sortOptions.map((option) => (
-                <option key={option.id} value={option.id}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-            <Popover
-              open={isPricePopoverOpen}
-              onOpenChange={setIsPricePopoverOpen}
-            >
-              <PopoverTrigger asChild>
+      <div className="grid gap-4 lg:grid-cols-[1.8fr_0.8fr] relative">
+        <div className="space-y-10">
+          <section
+            className="rounded-[28px] p-6 animate-[fade-in-up_0.6s_ease-out_both]"
+            style={{ animationDelay: "120ms" }}
+          >
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <h2 className="text-lg font-semibold text-slate-900">
+                {languageDic.latestTitle}
+              </h2>
+              <div className="flex flex-wrap gap-3">
+                <input
+                  className="w-48 rounded-full border border-slate-900/10 bg-white px-4 py-2 text-sm"
+                  placeholder={languageDic.searchPlaceholder}
+                  type="text"
+                  value={searchTerm}
+                  onChange={(event) => setSearchTerm(event.target.value)}
+                />
+                <select
+                  className="rounded-full border border-slate-900/10 bg-white px-4 py-2 text-sm cursor-pointer"
+                  value={sortKey}
+                  onChange={(event) => setSortKey(event.target.value)}
+                >
+                  {sortOptions.map((option) => (
+                    <option key={option.id} value={option.id}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+                <Popover
+                  open={isPricePopoverOpen}
+                  onOpenChange={setIsPricePopoverOpen}
+                >
+                  <PopoverTrigger asChild>
+                    <button
+                      className="rounded-full border border-slate-900/15 bg-white/70 px-5 py-2 text-sm font-semibold text-slate-700 cursor-pointer"
+                      type="button"
+                    >
+                      {priceRangeLabel}
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent
+                    align="end"
+                    className="w-72 rounded-2xl border border-slate-200 bg-white p-4 shadow-lg"
+                  >
+                    <div className="space-y-3 text-sm">
+                      <div className="space-y-2">
+                        <label className="text-xs uppercase tracking-[0.28em] text-slate-500">
+                          {languageDic.priceRangeMinLabel}
+                        </label>
+                        <Input
+                          inputMode="decimal"
+                          min="0"
+                          onChange={(event) => {
+                            setPriceRangeDraft((prev) => ({
+                              ...prev,
+                              min: event.target.value,
+                            }));
+                            if (priceRangeError) {
+                              setPriceRangeError(null);
+                            }
+                          }}
+                          placeholder={languageDic.priceRangeMinPlaceholder}
+                          step="0.0001"
+                          type="number"
+                          value={priceRangeDraft.min}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-xs uppercase tracking-[0.28em] text-slate-500">
+                          {languageDic.priceRangeMaxLabel}
+                        </label>
+                        <Input
+                          inputMode="decimal"
+                          min="0"
+                          onChange={(event) => {
+                            setPriceRangeDraft((prev) => ({
+                              ...prev,
+                              max: event.target.value,
+                            }));
+                            if (priceRangeError) {
+                              setPriceRangeError(null);
+                            }
+                          }}
+                          placeholder={languageDic.priceRangeMaxPlaceholder}
+                          step="0.0001"
+                          type="number"
+                          value={priceRangeDraft.max}
+                        />
+                      </div>
+                      {priceRangeError ? (
+                        <p className="text-xs text-rose-600">
+                          {priceRangeError}
+                        </p>
+                      ) : null}
+                      <div className="flex items-center justify-end gap-2 pt-1">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="cursor-pointer"
+                          onClick={() => {
+                            setPriceRange({ min: "", max: "" });
+                            setPriceRangeDraft({ min: "", max: "" });
+                            setPriceRangeError(null);
+                            setIsPricePopoverOpen(false);
+                          }}
+                        >
+                          {languageDic.priceRangeClear}
+                        </Button>
+                        <Button
+                          type="button"
+                          className="cursor-pointer"
+                          onClick={() => {
+                            const minValue = parsePriceValue(
+                              priceRangeDraft.min
+                            );
+                            const maxValue = parsePriceValue(
+                              priceRangeDraft.max
+                            );
+                            if (
+                              (minValue !== null && minValue < 0) ||
+                              (maxValue !== null && maxValue < 0) ||
+                              (minValue !== null &&
+                                maxValue !== null &&
+                                minValue > maxValue)
+                            ) {
+                              setPriceRangeError(languageDic.priceRangeError);
+                              return;
+                            }
+                            setPriceRange({
+                              min: priceRangeDraft.min.trim(),
+                              max: priceRangeDraft.max.trim(),
+                            });
+                            setPriceRangeError(null);
+                            setIsPricePopoverOpen(false);
+                          }}
+                        >
+                          {languageDic.priceRangeApply}
+                        </Button>
+                      </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
                 <button
-                  className="rounded-full border border-slate-900/15 bg-white/70 px-5 py-2 text-sm font-semibold text-slate-700 cursor-pointer"
+                  className="rounded-full border border-slate-900/15 bg-white/70 px-5 py-2 text-sm font-semibold text-slate-700"
                   type="button"
                 >
-                  {priceRangeLabel}
+                  {languageDic.onlyBuyable}
                 </button>
-              </PopoverTrigger>
-              <PopoverContent
-                align="end"
-                className="w-72 rounded-2xl border border-slate-200 bg-white p-4 shadow-lg"
-              >
-                <div className="space-y-3 text-sm">
-                  <div className="space-y-2">
-                    <label className="text-xs uppercase tracking-[0.28em] text-slate-500">
-                      {languageDic.priceRangeMinLabel}
-                    </label>
-                    <Input
-                      inputMode="decimal"
-                      min="0"
-                      onChange={(event) => {
-                        setPriceRangeDraft((prev) => ({
-                          ...prev,
-                          min: event.target.value,
-                        }));
-                        if (priceRangeError) {
-                          setPriceRangeError(null);
-                        }
-                      }}
-                      placeholder={languageDic.priceRangeMinPlaceholder}
-                      step="0.0001"
-                      type="number"
-                      value={priceRangeDraft.min}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-xs uppercase tracking-[0.28em] text-slate-500">
-                      {languageDic.priceRangeMaxLabel}
-                    </label>
-                    <Input
-                      inputMode="decimal"
-                      min="0"
-                      onChange={(event) => {
-                        setPriceRangeDraft((prev) => ({
-                          ...prev,
-                          max: event.target.value,
-                        }));
-                        if (priceRangeError) {
-                          setPriceRangeError(null);
-                        }
-                      }}
-                      placeholder={languageDic.priceRangeMaxPlaceholder}
-                      step="0.0001"
-                      type="number"
-                      value={priceRangeDraft.max}
-                    />
-                  </div>
-                  {priceRangeError ? (
-                    <p className="text-xs text-rose-600">{priceRangeError}</p>
-                  ) : null}
-                  <div className="flex items-center justify-end gap-2 pt-1">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="cursor-pointer"
-                      onClick={() => {
-                        setPriceRange({ min: "", max: "" });
-                        setPriceRangeDraft({ min: "", max: "" });
-                        setPriceRangeError(null);
-                        setIsPricePopoverOpen(false);
-                      }}
-                    >
-                      {languageDic.priceRangeClear}
-                    </Button>
-                    <Button
-                      type="button"
-                      className="cursor-pointer"
-                      onClick={() => {
-                        const minValue = parsePriceValue(priceRangeDraft.min);
-                        const maxValue = parsePriceValue(priceRangeDraft.max);
-                        if (
-                          (minValue !== null && minValue < 0) ||
-                          (maxValue !== null && maxValue < 0) ||
-                          (minValue !== null &&
-                            maxValue !== null &&
-                            minValue > maxValue)
-                        ) {
-                          setPriceRangeError(languageDic.priceRangeError);
-                          return;
-                        }
-                        setPriceRange({
-                          min: priceRangeDraft.min.trim(),
-                          max: priceRangeDraft.max.trim(),
-                        });
-                        setPriceRangeError(null);
-                        setIsPricePopoverOpen(false);
-                      }}
-                    >
-                      {languageDic.priceRangeApply}
-                    </Button>
-                  </div>
-                </div>
-              </PopoverContent>
-            </Popover>
-            <button
-              className="rounded-full border border-slate-900/15 bg-white/70 px-5 py-2 text-sm font-semibold text-slate-700"
-              type="button"
-            >
-              {languageDic.onlyBuyable}
-            </button>
-          </div>
-        </div>
-        <div className="mt-6 grid gap-6 lg:grid-cols-[1.6fr_0.9fr]">
-          <div className="space-y-6">
-            {buyFeedback ? (
-              <div
-                className={`rounded-[20px] border px-4 py-3 text-sm ${
-                  buyFeedback.type === "success"
-                    ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                    : "border-rose-200 bg-rose-50 text-rose-700"
-                }`}
-              >
-                {buyFeedback.message}
               </div>
-            ) : null}
-            <div className="grid gap-6 md:grid-cols-2">
-              {loading ? (
-                <div className="md:col-span-2 rounded-[24px] border border-dashed border-slate-900/10 bg-white/60 p-8 text-center text-sm text-slate-500">
-                  {languageDic.loadingText}
-                </div>
-              ) : hasError ? (
-                <div className="md:col-span-2 rounded-[24px] border border-dashed border-slate-900/10 bg-white/60 p-8 text-center text-sm text-slate-500">
-                  {languageDic.errorText}
-                </div>
-              ) : displayListings.length === 0 ? (
-                <div className="md:col-span-2 rounded-[24px] border border-dashed border-slate-900/10 bg-white/60 p-8 text-center text-sm text-slate-500">
-                  {languageDic.emptyText}
-                </div>
-              ) : (
-                displayListings.map((listing) => (
-                  <MarketListingCard
-                    copy={languageDic}
-                    isBuying={buyingId === listing.id}
-                    isBuyDisabled={
-                      isBuyingBusy ||
-                      !listing.listingId ||
-                      !parseListingId(listing.listingId) ||
-                      !listing.rawPrice
-                    }
-                    key={listing.id}
-                    listing={listing}
-                    onBuyNow={buyNow}
-                  />
-                ))
-              )}
             </div>
-            {!loading && !hasError && displayListings.length > 0 ? (
-              <div className="flex items-center justify-center" ref={loadMoreRef}>
-                {hasMore ? (
-                  isLoadingMore ? (
-                    <span className="text-sm text-slate-500">
-                      {languageDic.loadingMore}
-                    </span>
-                  ) : (
-                    <Button variant="outline" type="button" onClick={loadMore}>
-                      {languageDic.loadMore}
-                    </Button>
-                  )
+            <div className="mt-6 space-y-6">
+              {buyFeedback ? (
+                <div
+                  className={`rounded-[20px] border px-4 py-3 text-sm ${
+                    buyFeedback.type === "success"
+                      ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                      : "border-rose-200 bg-rose-50 text-rose-700"
+                  }`}
+                >
+                  {buyFeedback.message}
+                </div>
+              ) : null}
+              <div className="grid gap-6 md:grid-cols-2">
+                {loading ? (
+                  <div className="md:col-span-2 rounded-[24px] border border-dashed border-slate-900/10 bg-white/60 p-8 text-center text-sm text-slate-500">
+                    {languageDic.loadingText}
+                  </div>
+                ) : hasError ? (
+                  <div className="md:col-span-2 rounded-[24px] border border-dashed border-slate-900/10 bg-white/60 p-8 text-center text-sm text-slate-500">
+                    {languageDic.errorText}
+                  </div>
+                ) : displayListings.length === 0 ? (
+                  <div className="md:col-span-2 rounded-[24px] border border-dashed border-slate-900/10 bg-white/60 p-8 text-center text-sm text-slate-500">
+                    {languageDic.emptyText}
+                  </div>
                 ) : (
-                  <span className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">
-                    {languageDic.endText}
-                  </span>
+                  displayListings.map((listing) => (
+                    <MarketListingCard
+                      copy={languageDic}
+                      isBuying={buyingId === listing.id}
+                      isBuyDisabled={
+                        isBuyingBusy ||
+                        !listing.listingId ||
+                        !parseListingId(listing.listingId) ||
+                        !listing.rawPrice
+                      }
+                      key={listing.id}
+                      listing={listing}
+                      onBuyNow={buyNow}
+                    />
+                  ))
                 )}
               </div>
-            ) : null}
-          </div>
-          <aside className="rounded-[24px] border border-slate-900/10 bg-white/80 p-5">
+              {!loading && !hasError && displayListings.length > 0 ? (
+                <div
+                  className="flex items-center justify-center"
+                  ref={loadMoreRef}
+                >
+                  {hasMore ? (
+                    isLoadingMore ? (
+                      <span className="text-sm text-slate-500">
+                        {languageDic.loadingMore}
+                      </span>
+                    ) : (
+                      <Button
+                        variant="outline"
+                        type="button"
+                        onClick={loadMore}
+                      >
+                        {languageDic.loadMore}
+                      </Button>
+                    )
+                  ) : (
+                    <span className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">
+                      {languageDic.endText}
+                    </span>
+                  )}
+                </div>
+              ) : null}
+            </div>
+          </section>
+        </div>
+        <aside className="self-start">
+          <div
+            className="w-full rounded-[24px] p-5 md:fixed md:top-24 md:bottom-6 md:flex md:w-[420px] md:flex-col"
+            style={{
+              right: "max(1.5rem, calc((100vw - 1440px) / 2 + 1.5rem))",
+            }}
+          >
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-semibold uppercase tracking-[0.28em] text-slate-500">
                 {activityCopy.label}
@@ -957,86 +965,88 @@ export default function MarketPage() {
                 {activityCopy.eventSale}
               </span>
             </div>
-            <div className="mt-4 space-y-3">
-              {activityLoading ? (
-                <div className="rounded-2xl border border-dashed border-slate-900/10 bg-white/60 p-4 text-center text-sm text-slate-500">
-                  {activityCopy.loadingText}
-                </div>
-              ) : activityHasError ? (
-                <div className="rounded-2xl border border-dashed border-slate-900/10 bg-white/60 p-4 text-center text-sm text-slate-500">
-                  {activityCopy.errorText}
-                </div>
-              ) : activityRows.length === 0 ? (
-                <div className="rounded-2xl border border-dashed border-slate-900/10 bg-white/60 p-4 text-center text-sm text-slate-500">
-                  {activityCopy.emptyText}
-                </div>
-              ) : (
-                activityRows.map((row) => (
-                  <div
-                    className="rounded-2xl border border-slate-900/10 bg-white p-4 text-sm text-slate-600"
-                    key={row.id}
-                  >
-                    <div className="flex items-center justify-between text-xs text-slate-500">
-                      <span className="font-semibold uppercase tracking-[0.24em]">
-                        {row.eventLabel}
-                      </span>
-                      <span>{row.timeLabel}</span>
-                    </div>
-                    <div className="mt-2 flex items-center justify-between">
-                      {row.itemLink ? (
-                        <Link
-                          className="font-semibold text-slate-900 hover:text-slate-700"
-                          href={row.itemLink}
-                        >
-                          {row.itemLabel}
-                        </Link>
-                      ) : (
-                        <span className="font-semibold text-slate-900">
-                          {row.itemLabel}
-                        </span>
-                      )}
-                      <span className="text-sm font-semibold text-slate-900">
-                        {row.priceLabel}
-                      </span>
-                    </div>
-                    <div className="mt-2 flex items-center justify-between text-xs text-slate-500">
-                      <span>
-                        {activityCopy.columns.from} {row.fromLabel}
-                      </span>
-                      <span>
-                        {activityCopy.columns.to} {row.toLabel}
-                      </span>
-                    </div>
+            <ScrollArea
+              className="mt-4 max-h-[calc(100vh-10rem)] w-full scrollbar-hidden md:min-h-0 md:flex-1 md:max-h-none"
+              onViewportScroll={handleActivityScroll}
+              viewportClassName="scrollbar-hidden"
+            >
+              <div className="space-y-3">
+                {activityLoading ? (
+                  <div className="rounded-2xl border border-dashed border-slate-900/10 p-4 text-center text-sm text-slate-500">
+                    {activityCopy.loadingText}
                   </div>
-                ))
-              )}
-            </div>
-            {!activityLoading && !activityHasError && activityRows.length > 0 ? (
-              <div className="mt-4 flex items-center justify-center">
-                {activityHasMore ? (
-                  isActivityLoadingMore ? (
-                    <span className="text-sm text-slate-500">
-                      {activityCopy.loadingMore}
-                    </span>
-                  ) : (
-                    <Button
-                      variant="outline"
-                      type="button"
-                      onClick={loadMoreActivity}
-                    >
-                      {activityCopy.loadMore}
-                    </Button>
-                  )
+                ) : activityHasError ? (
+                  <div className="rounded-2xl border border-dashed border-slate-900/10 p-4 text-center text-sm text-slate-500">
+                    {activityCopy.errorText}
+                  </div>
+                ) : activityRows.length === 0 ? (
+                  <div className="rounded-2xl border border-dashed border-slate-900/10 p-4 text-center text-sm text-slate-500">
+                    {activityCopy.emptyText}
+                  </div>
                 ) : (
-                  <span className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">
-                    {activityCopy.endText}
-                  </span>
+                  activityRows.map((row) => (
+                    <div
+                      className="rounded-2xl border border-slate-900/10 p-4 text-sm text-slate-600"
+                      key={row.id}
+                    >
+                      <div className="grid grid-cols-[64px_1fr] items-stretch gap-3">
+                        <div className="relative flex h-full min-h-16 w-16 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-amber-200 via-amber-100 to-emerald-100 text-[10px] font-semibold text-slate-700">
+                          {row.imageUrl ? (
+                            <Image
+                              alt={row.itemLabel}
+                              className="object-contain p-1.5"
+                              fill
+                              sizes="64px"
+                              src={row.imageUrl}
+                            />
+                          ) : (
+                            <span className="px-1 text-center leading-tight">
+                              {row.previewLabel}
+                            </span>
+                          )}
+                        </div>
+                        <div className="min-w-0 space-y-2">
+                          <div className="flex items-center justify-between text-xs text-slate-500">
+                            <span className="font-semibold uppercase tracking-[0.24em]">
+                              {row.eventLabel}
+                            </span>
+                            <span>{row.timeLabel}</span>
+                          </div>
+                          <div className="flex items-center justify-between gap-3">
+                            {row.itemLink ? (
+                              <Link
+                                className="truncate font-semibold text-slate-900 hover:text-slate-700"
+                                href={row.itemLink}
+                              >
+                                {row.itemLabel}
+                              </Link>
+                            ) : (
+                              <span className="truncate font-semibold text-slate-900">
+                                {row.itemLabel}
+                              </span>
+                            )}
+                            <span className="text-sm font-semibold text-slate-900">
+                              {row.priceLabel}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between text-xs text-slate-500">
+                            <span>
+                              {activityCopy.columns.from} {row.fromLabel}
+                            </span>
+                            <span>
+                              {activityCopy.columns.to} {row.toLabel}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))
                 )}
               </div>
-            ) : null}
-          </aside>
-        </div>
-      </section>
+            </ScrollArea>
+          </div>
+        </aside>
+      </div>
     </div>
   );
 }

@@ -985,7 +985,7 @@ export default function MyBadgesPage() {
   };
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-3">
       <AlertDialog open={showConnectAlert} onOpenChange={setShowConnectAlert}>
         <AlertDialogContent>
           <AlertDialogHeader>

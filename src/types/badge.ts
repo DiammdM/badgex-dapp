@@ -81,6 +81,7 @@ export type MarketPurchaseRecord = {
   id: string;
   tokenId?: string | null;
   badgeName?: string | null;
+  imageUrl?: string | null;
   buyer: string;
   seller: string;
   price?: string | null;

@@ -34,7 +34,7 @@ export default function RootLayout({
       className={`${sora.variable} ${fraunces.variable}`}
     >
       <body className="bg-[#f7f2ea] text-slate-900 antialiased">
-        <div className="relative min-h-screen overflow-hidden">
+        <div className="relative min-h-screen overflow-x-hidden">
           <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(1200px_circle_at_15%_-10%,_#fff4d1_0%,_transparent_60%),radial-gradient(900px_circle_at_90%_10%,_#d9f4ee_0%,_transparent_55%),radial-gradient(700px_circle_at_40%_110%,_#f7d8c5_0%,_transparent_60%)]" />
           <LanguageProvider>
             <WalletProvider>
