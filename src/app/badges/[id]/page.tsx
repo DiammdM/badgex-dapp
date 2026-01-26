@@ -319,7 +319,7 @@ export default function BadgeDetailPage() {
             {copy.back}
           </Link>
           <Link
-            className="rounded-full bg-slate-900 px-5 py-2 text-sm font-semibold text-amber-50"
+            className="rounded-full bg-slate-900 px-5 py-2 text-sm font-semibold text-amber-50 neon-cta"
             href="/market"
           >
             {copy.viewMarket}

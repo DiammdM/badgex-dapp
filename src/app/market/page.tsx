@@ -986,7 +986,7 @@ export default function MarketPage() {
                 ) : (
                   activityRows.map((row) => (
                     <div
-                      className="rounded-2xl border border-slate-900/10 p-4 text-sm text-slate-600"
+                      className="rounded-2xl border border-slate-900/10 p-4 text-sm text-slate-600 border-bright"
                       key={row.id}
                     >
                       <div className="grid grid-cols-[64px_1fr] items-stretch gap-3">

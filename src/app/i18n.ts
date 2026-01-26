@@ -57,7 +57,7 @@ export const homeContent = {
     primaryCta: "Start Building",
     secondaryCta: "Browse Market",
     highlights: [
-      { label: "Drafts", value: "128", note: "Local saved" },
+      { label: "Saved", value: "128", note: "IPFS assets" },
       { label: "Minted", value: "42", note: "On-chain NFTs" },
       { label: "Listed", value: "16", note: "Fixed price" },
     ],
@@ -92,9 +92,9 @@ export const homeContent = {
       subtitle: "My Badges",
       badgeTitle: "Badge pipeline",
       statuses: [
-        { title: "Draft / 4", note: "Badge pipeline" },
         { title: "Saved / 4", note: "Badge pipeline" },
         { title: "Minted / 4", note: "Badge pipeline" },
+        { title: "Listed / 4", note: "Badge pipeline" },
       ],
     },
     featured: {
@@ -134,9 +134,9 @@ export const homeContent = {
         {
           title: "IPFS + Metadata",
           description:
-            "Upload PNG assets, generate tokenURI, and keep drafts synced.",
+            "Upload PNG assets, generate tokenURI, and keep saved badges synced.",
           href: "/my-badges",
-          action: "Manage drafts",
+          action: "Manage badges",
         },
         {
           title: "Marketplace",
@@ -163,7 +163,7 @@ export const homeContent = {
     primaryCta: "开始生成",
     secondaryCta: "浏览市场",
     highlights: [
-      { label: "草稿", value: "128", note: "本地保存" },
+      { label: "已保存", value: "128", note: "IPFS 资产" },
       { label: "已铸造", value: "42", note: "链上 NFT" },
       { label: "已上架", value: "16", note: "固定价格" },
     ],
@@ -197,9 +197,9 @@ export const homeContent = {
       subtitle: "我的徽章",
       badgeTitle: "徽章流程",
       statuses: [
-        { title: "草稿 / 4", note: "徽章流程" },
         { title: "已保存 / 4", note: "徽章流程" },
         { title: "已铸造 / 4", note: "徽章流程" },
+        { title: "已上架 / 4", note: "徽章流程" },
       ],
     },
     featured: {
@@ -237,9 +237,9 @@ export const homeContent = {
         },
         {
           title: "IPFS + Metadata",
-          description: "上传 PNG 资产，生成 tokenURI，并同步草稿状态。",
+          description: "上传 PNG 资产，生成 tokenURI，并同步已保存资产。",
           href: "/my-badges",
-          action: "管理草稿",
+          action: "管理徽章",
         },
         {
           title: "市场",
@@ -265,7 +265,6 @@ export const builderContent = {
     title: "Generate your signature badge",
     description:
       "Pick theme, shape, and text with a live 512x512 preview. Save to IPFS and generate metadata in one click.",
-    statusDraft: "Status: Draft",
     statusLocal: "Local Only",
     reset: "Reset",
     saveToIpfs: "Save to IPFS",
@@ -317,7 +316,6 @@ export const builderContent = {
     title: "生成你的专属徽章",
     description:
       "选择主题、形状与文本，实时预览 512x512 效果。保存到 IPFS 并一键生成 metadata。",
-    statusDraft: "状态：草稿",
     statusLocal: "仅本地",
     reset: "重置",
     saveToIpfs: "保存到 IPFS",
@@ -608,7 +606,7 @@ export const marketActivityContent = {
 export const myBadgesContent = {
   en: {
     label: "My Badges",
-    title: "Manage drafts, saved assets, and minted NFTs",
+    title: "Manage saved assets, minted NFTs, and listings",
     description:
       "Track badge status in one place. Save to IPFS, mint on-chain, and list for sale when you are ready.",
     newBadge: "New Badge",
@@ -622,8 +620,12 @@ export const myBadgesContent = {
     tokenNote: "Confirm tokenURI is ready before minting.",
     libraryTitle: "Badge Library",
     filters: ["All", "Saved", "Minted", "Listed"],
+    refreshFeedback: {
+      loading: "Refreshing...",
+      success: "Status updated",
+      error: "Refresh failed",
+    },
     statusLabels: {
-      draft: "draft",
       saved: "saved",
       minted: "minted",
       listed: "listed",
@@ -727,7 +729,7 @@ export const myBadgesContent = {
   },
   zh: {
     label: "我的徽章",
-    title: "管理草稿、已保存资产与已铸造 NFT",
+    title: "管理已保存资产、已铸造 NFT 与上架",
     description: "在一个面板追踪徽章状态，保存到 IPFS、链上铸造并上架。",
     newBadge: "新建徽章",
     refresh: "刷新状态",
@@ -740,8 +742,12 @@ export const myBadgesContent = {
     tokenNote: "铸造前确认 tokenURI 已就绪。",
     libraryTitle: "徽章库",
     filters: ["全部", "已保存", "已铸造", "已上架"],
+    refreshFeedback: {
+      loading: "刷新中...",
+      success: "已刷新",
+      error: "刷新失败",
+    },
     statusLabels: {
-      draft: "草稿",
       saved: "已保存",
       minted: "已铸造",
       listed: "已上架",

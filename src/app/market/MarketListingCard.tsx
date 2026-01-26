@@ -45,13 +45,10 @@ export function MarketListingCard({
   onBuyNow,
 }: MarketListingCardProps) {
   return (
-    <div className="flex flex-col gap-4 rounded-[24px] border border-slate-900/10 bg-white p-5 shadow-sm">
+    <div className="flex flex-col gap-4 rounded-[24px] border border-slate-900/10 bg-white p-5 shadow-sm border-bright">
       <div className="flex items-center justify-between">
         <span className="rounded-full bg-slate-900 px-3 py-1 text-xs font-semibold text-amber-100">
           {listing.displayId}
-        </span>
-        <span className="text-xs font-semibold text-slate-500">
-          {copy.royaltyLabel} {listing.royaltyLabel}
         </span>
       </div>
       <div className="flex items-center gap-4">
@@ -99,7 +96,7 @@ export function MarketListingCard({
           className={`flex-1 rounded-full px-4 py-2 text-xs font-semibold cursor-pointer ${
             isBuyDisabled
               ? "cursor-not-allowed bg-slate-400 text-white/80"
-              : "bg-slate-900 text-amber-50"
+              : "bg-[linear-gradient(135deg,var(--color-primary)_0%,var(--color-secondary)_100%)] text-primary-foreground"
           }`}
           disabled={isBuyDisabled}
           onClick={() => onBuyNow(listing)}
@@ -108,7 +105,7 @@ export function MarketListingCard({
           {isBuying ? copy.buying : copy.buyNow}
         </button>
         <Link
-          className="flex-1 rounded-full border border-slate-900/10 bg-white px-4 py-2 text-center text-xs font-semibold text-slate-600"
+          className="flex-1 rounded-full border border-slate-900/10 bg-white px-4 py-2 text-center text-xs font-semibold text-slate-600 border-bright"
           href={`/badges/${listing.linkId}`}
         >
           {copy.viewDetails}

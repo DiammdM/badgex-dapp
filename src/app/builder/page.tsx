@@ -258,9 +258,6 @@ export default function BuilderPage() {
           </p>
           <div className="flex flex-wrap gap-3 text-xs font-semibold uppercase tracking-[0.26em] text-slate-500">
             <span className="rounded-full border border-slate-900/10 bg-white/70 px-3 py-1">
-              {languageDic.statusDraft}
-            </span>
-            <span className="rounded-full border border-slate-900/10 bg-white/70 px-3 py-1">
               {languageDic.statusLocal}
             </span>
           </div>
@@ -268,14 +265,14 @@ export default function BuilderPage() {
         <div className="flex flex-col items-start gap-3">
           <div className="flex flex-wrap gap-3">
             <button
-              className="rounded-full border border-slate-900/15 bg-white/70 px-5 py-2 text-sm font-semibold text-slate-700 transition hover:-translate-y-0.5"
+              className="rounded-full border border-slate-900/15 bg-white/70 px-5 py-2 text-sm font-semibold text-slate-700 transition hover:-translate-y-0.5 border-bright"
               onClick={handleReset}
               type="button"
             >
               {languageDic.reset}
             </button>
             <button
-              className="rounded-full bg-slate-900 px-5 py-2 text-sm font-semibold text-amber-50 shadow-lg shadow-slate-900/20 transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
+              className="rounded-full bg-slate-900 px-5 py-2 text-sm font-semibold text-amber-50 shadow-lg shadow-slate-900/20 transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60 neon-cta border-bright"
               disabled={saveStatus === "saving"}
               onClick={handleSave}
               type="button"
@@ -297,7 +294,7 @@ export default function BuilderPage() {
         className="grid animate-[fade-in-up_0.6s_ease-out_both] gap-8 lg:grid-cols-[1fr_1fr]"
         style={{ animationDelay: "120ms" }}
       >
-        <div className="rounded-[28px] border border-slate-900/10 bg-white/75 p-6 shadow-lg shadow-slate-900/5">
+        <div className="rounded-[28px] border border-slate-900/10 bg-white/75 p-6 shadow-lg shadow-slate-900/5 border-bright">
           <h2 className="text-lg font-semibold text-slate-900">
             {languageDic.configTitle}
           </h2>
@@ -459,7 +456,7 @@ export default function BuilderPage() {
           </div>
         </div>
 
-        <div className="space-y-6">
+        <div className="rounded-[28px] border border-slate-900/10 bg-white/75 p-6 shadow-lg shadow-slate-900/5 border-bright">
           <div className="rounded-[28px] border border-slate-900/10 bg-white/80 p-6 shadow-lg shadow-slate-900/5">
             <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">
               <span>{languageDic.previewTitle}</span>
@@ -592,7 +589,6 @@ export default function BuilderPage() {
               {languageDic.metadataNote}
             </div>
           </div>
-
         </div>
       </section>
     </div>

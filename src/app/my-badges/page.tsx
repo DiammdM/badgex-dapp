@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLanguage } from "@src/components/LanguageProvider";
 import { myBadgesContent, global } from "../i18n";
+import { toast } from "sonner";
 import {
   useConnection,
   usePublicClient,
@@ -39,6 +40,7 @@ import { BadgeLibrarySection } from "./BadgeLibrarySection";
 import {
   type BadgeListItem,
   type BadgeStatus,
+  type BadgeFilter,
   type BadgeRecordResponse,
   type MintContext,
   type ListingContext,
@@ -114,13 +116,20 @@ export default function MyBadgesPage() {
   const { mutateAsync: approveMarketplaceAsync } =
     useWriteBadgeNftSetApprovalForAll();
   const [cancelingId, setCancelingId] = useState<string | null>(null);
+  const manualRefreshRef = useRef(false);
+  const [activeFilter, setActiveFilter] = useState<BadgeFilter>("all");
   const isCanceling = isCancelingTx || cancelingId !== null;
   const isListingBusy =
     isListing || isApproving || !!listingTxHash || isCanceling;
 
   const loadBadges = useCallback(async () => {
+    const wasManualRefresh = manualRefreshRef.current;
+    manualRefreshRef.current = false;
     if (!address) {
       setBadges([]);
+      if (wasManualRefresh) {
+        toast.error(languageDic.refreshFeedback?.error ?? "Refresh failed");
+      }
       return;
     }
     setLoading(true);
@@ -133,13 +142,23 @@ export default function MyBadgesPage() {
       }
       const data = await response.json();
       setBadges(Array.isArray(data?.badges) ? data.badges : []);
+      if (wasManualRefresh) {
+        toast.success(languageDic.refreshFeedback?.success ?? "Status updated");
+      }
     } catch (error) {
       console.error(error);
       setBadges([]);
+      if (wasManualRefresh) {
+        toast.error(languageDic.refreshFeedback?.error ?? "Refresh failed");
+      }
     } finally {
       setLoading(false);
     }
-  }, [address]);
+  }, [
+    address,
+    languageDic.refreshFeedback?.error,
+    languageDic.refreshFeedback?.success,
+  ]);
 
   const resolveMarketErrorMessage = useCallback(
     (error: unknown) => {
@@ -626,53 +645,76 @@ export default function MyBadgesPage() {
     void loadBadges();
   }, [loadBadges]);
 
-  const displayBadges = useMemo<BadgeListItem[]>(() => {
-    return badges.map((badge) => {
-      const config =
-        badge.config && typeof badge.config === "object"
-          ? (badge.config as Partial<BadgeConfig>)
-          : {};
-      const theme = BADGE_THEME_OPTIONS.find(
-        (option) => option.id === config.Theme
-      )?.labels[language];
-      const updated = new Date(badge.updatedAt).toLocaleDateString(locale, {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-      });
-      const status = badge.status.toLowerCase() as BadgeStatus;
-      const tokenUri =
-        typeof badge.tokenUri === "string"
-          ? badge.tokenUri
-          : typeof (badge as { tokenURI?: string | null }).tokenURI === "string"
-          ? (badge as { tokenURI?: string }).tokenURI
-          : undefined;
-      const imageCid = badge.imageCid ?? getCidFromIpfs(badge.ipfsUrl);
-      const imageUrl =
-        typeof badge.imageUrl === "string" && badge.imageUrl
-          ? badge.imageUrl
-          : undefined;
-      const metadataCid = badge.metadataCid ?? getCidFromIpfs(tokenUri);
-      const tokenURI =
-        tokenUri ?? (metadataCid ? `ipfs://${metadataCid}` : undefined);
+  const filterOptions = useMemo(() => {
+    const labels = Array.isArray(languageDic.filters)
+      ? languageDic.filters
+      : [];
+    return [
+      { key: "all" as const, label: labels[0] ?? "All" },
+      { key: "saved" as const, label: labels[1] ?? "Saved" },
+      { key: "minted" as const, label: labels[2] ?? "Minted" },
+      { key: "listed" as const, label: labels[3] ?? "Listed" },
+    ];
+  }, [languageDic.filters]);
 
-      return {
-        id: badge.id,
-        name: badge.name,
-        status,
-        theme: theme || "-",
-        updated,
-        tokenId: typeof badge.tokenId === "string" ? badge.tokenId : undefined,
-        tokenURI,
-        imageCid: imageCid ?? undefined,
-        imageUrl,
-        metadataCid: metadataCid ?? undefined,
-        config,
-        price: badge.price ?? undefined,
-        listingId: badge.listingId ?? undefined,
-      };
-    });
+  const displayBadges = useMemo<BadgeListItem[]>(() => {
+    return badges
+      .filter((badge) => badge.status !== BadgeRecordStatus.Draft)
+      .map((badge) => {
+        const config =
+          badge.config && typeof badge.config === "object"
+            ? (badge.config as Partial<BadgeConfig>)
+            : {};
+        const theme = BADGE_THEME_OPTIONS.find(
+          (option) => option.id === config.Theme
+        )?.labels[language];
+        const updated = new Date(badge.updatedAt).toLocaleDateString(locale, {
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+        });
+        const status = badge.status.toLowerCase() as BadgeStatus;
+        const tokenUri =
+          typeof badge.tokenUri === "string"
+            ? badge.tokenUri
+            : typeof (badge as { tokenURI?: string | null }).tokenURI ===
+              "string"
+            ? (badge as { tokenURI?: string }).tokenURI
+            : undefined;
+        const imageCid = badge.imageCid ?? getCidFromIpfs(badge.ipfsUrl);
+        const imageUrl =
+          typeof badge.imageUrl === "string" && badge.imageUrl
+            ? badge.imageUrl
+            : undefined;
+        const metadataCid = badge.metadataCid ?? getCidFromIpfs(tokenUri);
+        const tokenURI =
+          tokenUri ?? (metadataCid ? `ipfs://${metadataCid}` : undefined);
+
+        return {
+          id: badge.id,
+          name: badge.name,
+          status,
+          theme: theme || "-",
+          updated,
+          tokenId:
+            typeof badge.tokenId === "string" ? badge.tokenId : undefined,
+          tokenURI,
+          imageCid: imageCid ?? undefined,
+          imageUrl,
+          metadataCid: metadataCid ?? undefined,
+          config,
+          price: badge.price ?? undefined,
+          listingId: badge.listingId ?? undefined,
+        };
+      });
   }, [badges, language, locale]);
+
+  const filteredBadges = useMemo(() => {
+    if (activeFilter === "all") {
+      return displayBadges;
+    }
+    return displayBadges.filter((badge) => badge.status === activeFilter);
+  }, [activeFilter, displayBadges]);
 
   const badgeStats = useMemo(() => {
     const saved = badges.filter(
@@ -1087,7 +1129,7 @@ export default function MyBadgesPage() {
           </p>
           <div className="flex flex-wrap gap-3">
             <Link
-              className="rounded-full bg-slate-900 px-5 py-2 text-sm font-semibold text-amber-50 shadow-lg shadow-slate-900/20 transition hover:-translate-y-0.5"
+              className="rounded-full border border-slate-900/15 bg-slate-900 px-5 py-2 text-sm font-semibold text-amber-50 shadow-lg shadow-slate-900/20 transition hover:-translate-y-0.5 neon-cta border-bright"
               href="/builder"
             >
               {languageDic.newBadge}
@@ -1095,14 +1137,17 @@ export default function MyBadgesPage() {
             <button
               className="rounded-full border border-slate-900/15 bg-white/70 px-5 py-2 text-sm font-semibold text-slate-700 transition hover:-translate-y-0.5"
               disabled={loading}
-              onClick={loadBadges}
+              onClick={() => {
+                manualRefreshRef.current = true;
+                loadBadges();
+              }}
               type="button"
             >
               {loading ? `${languageDic.refresh}...` : languageDic.refresh}
             </button>
           </div>
         </div>
-        <div className="rounded-[28px] border border-slate-900/10 bg-white/75 p-6">
+        <div className="rounded-[28px] border border-slate-900/10 bg-white/75 p-6 border-bright">
           <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">
             {languageDic.walletSnapshot}
           </p>
@@ -1157,10 +1202,14 @@ export default function MyBadgesPage() {
       </section>
 
       <BadgeLibrarySection
-        badges={displayBadges}
+        badges={filteredBadges}
         languageDic={languageDic}
+        isLoading={loading}
         isMinting={isMinting || isListingBusy}
         isListingBusy={isListingBusy}
+        filters={filterOptions}
+        activeFilter={activeFilter}
+        onFilterChange={setActiveFilter}
         onList={list}
         onMint={mint}
         onCancel={cancel}

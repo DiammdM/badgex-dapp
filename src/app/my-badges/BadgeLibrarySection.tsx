@@ -1,22 +1,29 @@
 import Image from "next/image";
 import Link from "next/link";
-import { type BadgeListItem, type BadgeStatus } from "./types";
+import {
+  type BadgeFilter,
+  type BadgeListItem,
+  type BadgeStatus,
+} from "./types";
 import { myBadgesContent } from "../i18n";
 
 type BadgeLanguageDict = (typeof myBadgesContent)[keyof typeof myBadgesContent];
 
 const statusStyles: Record<BadgeStatus, string> = {
-  draft: "bg-amber-100 text-amber-900",
-  saved: "bg-emerald-100 text-emerald-900",
+  saved: "bg-amber-100 text-amber-900",
   minted: "bg-slate-900 text-amber-100",
-  listed: "bg-amber-100 text-amber-900",
+  listed: "bg-emerald-100 text-emerald-900",
 };
 
 type BadgeLibrarySectionProps = {
   badges: BadgeListItem[];
   languageDic: BadgeLanguageDict;
+  isLoading?: boolean;
   isMinting: boolean;
   isListingBusy?: boolean;
+  filters: Array<{ key: BadgeFilter; label: string }>;
+  activeFilter: BadgeFilter;
+  onFilterChange: (filter: BadgeFilter) => void;
   onMint: (badge: BadgeListItem) => void;
   onList: (badge: BadgeListItem) => void;
   onCancel: (badge: BadgeListItem) => void;
@@ -25,15 +32,19 @@ type BadgeLibrarySectionProps = {
 export function BadgeLibrarySection({
   badges,
   languageDic,
+  isLoading,
   isMinting,
   isListingBusy,
+  filters,
+  activeFilter,
+  onFilterChange,
   onMint,
   onList,
   onCancel,
 }: BadgeLibrarySectionProps) {
   return (
     <section
-      className="rounded-[28px] p-6 animate-[fade-in-up_0.6s_ease-out_both]"
+      className="relative rounded-[28px] p-6 animate-[fade-in-up_0.6s_ease-out_both]"
       style={{ animationDelay: "120ms" }}
     >
       <div className="flex flex-wrap items-center justify-between gap-4">
@@ -41,22 +52,29 @@ export function BadgeLibrarySection({
           {languageDic.libraryTitle}
         </h2>
         <div className="flex flex-wrap gap-2">
-          {languageDic.filters.map((filter, index) => (
-            <button
-              className={`rounded-full border px-4 py-2 text-xs font-semibold transition ${
-                index === 0
-                  ? "border-slate-900/20 bg-slate-900 text-amber-100"
-                  : "border-slate-900/10 bg-white text-slate-600"
-              }`}
-              key={filter}
-              type="button"
-            >
-              {filter}
-            </button>
-          ))}
+          {filters.map((filter) => {
+            const isActive = activeFilter === filter.key;
+            return (
+              <button
+                aria-pressed={isActive}
+                className={`rounded-full border px-4 py-2 text-xs font-semibold transition cursor-pointer ${
+                  isActive
+                    ? "border-slate-900/20 bg-slate-900 text-amber-100"
+                    : "border-slate-900/10 bg-white text-slate-600 hover:border-slate-900/20 hover:text-slate-900"
+                }`}
+                key={filter.key}
+                type="button"
+                onClick={() => {
+                  onFilterChange(filter.key);
+                }}
+              >
+                {filter.label}
+              </button>
+            );
+          })}
         </div>
       </div>
-      <div className="mt-6 grid gap-6 grid-cols-[repeat(auto-fit,_minmax(280px,_1fr))]">
+      <div className="mt-6 grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {badges.map((badge) => {
           const detailId = badge.tokenId
             ? badge.tokenId.replace("#", "")
@@ -74,7 +92,7 @@ export function BadgeLibrarySection({
           const listingIdDetail = badge.listingId ?? "--";
           return (
             <div
-              className="flex flex-col gap-4 rounded-[24px] border border-slate-900/10 bg-white p-5 shadow-sm"
+              className="flex flex-col gap-4 rounded-[24px] border border-slate-900/10 bg-white p-5 shadow-sm border-bright"
               key={badge.id}
             >
               <div className="flex items-center justify-between">
@@ -135,17 +153,9 @@ export function BadgeLibrarySection({
                 </div>
               </div>
               <div className="flex flex-wrap gap-3">
-                {badge.status === "draft" ? (
-                  <button
-                    className="rounded-full bg-slate-900 px-4 py-2 text-xs font-semibold text-amber-50"
-                    type="button"
-                  >
-                    {languageDic.actions.save}
-                  </button>
-                ) : null}
                 {badge.status === "saved" ? (
                   <button
-                    className="rounded-full bg-slate-900 px-4 py-2 text-xs font-semibold text-amber-50 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
+                    className="rounded-full bg-slate-900 px-4 py-2 text-xs font-semibold text-amber-50 cursor-pointer border-slate-900/10"
                     disabled={isMinting}
                     type="button"
                     onClick={() => {
@@ -157,7 +167,7 @@ export function BadgeLibrarySection({
                 ) : null}
                 {badge.status === "listed" ? (
                   <button
-                    className="rounded-full bg-rose-100 px-4 py-2 text-xs font-semibold text-rose-900 cursor-pointer"
+                    className="rounded-full bg-rose-100 px-4 py-2 text-xs font-semibold text-rose-900 cursor-pointer border-slate-900/10"
                     disabled={isListingBusy}
                     type="button"
                     onClick={() => {
@@ -169,7 +179,7 @@ export function BadgeLibrarySection({
                 ) : null}
                 {badge.status === "minted" ? (
                   <button
-                    className="rounded-full bg-amber-100 px-4 py-2 text-xs font-semibold text-amber-900 cursor-pointer"
+                    className="rounded-full bg-amber-100 px-4 py-2 text-xs font-semibold text-amber-900 cursor-pointer border-slate-900/10"
                     disabled={isListingBusy}
                     type="button"
                     onClick={() => {
@@ -180,7 +190,7 @@ export function BadgeLibrarySection({
                   </button>
                 ) : null}
                 <Link
-                  className="rounded-full border border-slate-900/10 bg-white px-4 py-2 text-xs font-semibold text-slate-600"
+                  className="rounded-full border border-slate-900/10 bg-white px-4 py-2 text-xs font-semibold text-slate-600 border-bright"
                   href={`/badges/${detailId}`}
                 >
                   {languageDic.actions.view}
@@ -196,6 +206,14 @@ export function BadgeLibrarySection({
           );
         })}
       </div>
+      {isLoading ? (
+        <div className="absolute inset-0 z-10 flex items-center justify-center rounded-[28px] bg-white/80 text-xs font-semibold text-slate-700 backdrop-blur-[2px]">
+          <div className="flex items-center gap-2 rounded-full border border-slate-900/10 bg-white px-4 py-2 shadow-sm">
+            <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-slate-900" />
+            {languageDic.refreshFeedback?.loading ?? "Loading..."}
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }

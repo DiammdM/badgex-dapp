@@ -25,7 +25,7 @@ export default function Home() {
           </div>
           <div className="flex flex-wrap items-center gap-4">
             <Link
-              className="rounded-full bg-slate-900 px-6 py-3 text-sm font-semibold text-amber-50 shadow-lg shadow-slate-900/20 transition hover:-translate-y-0.5 hover:bg-slate-800"
+              className="rounded-full bg-slate-900 px-6 py-3 text-sm font-semibold text-amber-50 shadow-lg shadow-slate-900/20 transition hover:-translate-y-0.5 hover:bg-slate-800 neon-cta"
               href="/builder"
             >
               {copy.primaryCta}
@@ -135,7 +135,7 @@ export default function Home() {
             ))}
           </div>
           <Link
-            className="inline-flex items-center justify-center rounded-full border border-slate-900/15 bg-slate-900 px-5 py-2 text-sm font-semibold text-amber-50 transition hover:-translate-y-0.5"
+            className="inline-flex items-center justify-center rounded-full border border-slate-900/15 bg-slate-900 px-5 py-2 text-sm font-semibold text-amber-50 transition hover:-translate-y-0.5 neon-cta"
             href="/builder"
           >
             {copy.flowCta}

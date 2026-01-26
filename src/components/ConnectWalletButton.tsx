@@ -26,7 +26,7 @@ export default function ConnectWalletButton({
   });
 
   const buttonClass =
-    "rounded-full border border-slate-900/20 bg-slate-900 px-5 py-2 text-sm font-semibold text-amber-50 shadow-sm transition hover:-translate-y-0.5 hover:bg-slate-800";
+    "rounded-full border border-slate-900/20 bg-slate-900 px-5 py-2 text-sm font-semibold text-amber-50 shadow-sm transition hover:-translate-y-0.5 hover:bg-slate-800 cursor-pointer dark:border-cyan-400/40 dark:bg-cyan-500/25 dark:text-slate-900 dark:hover:bg-cyan-400/40 dark:shadow-[0_0_18px_rgba(34,211,238,0.45)]";
 
   return (
     <ConnectButton.Custom>
@@ -78,7 +78,7 @@ export default function ConnectWalletButton({
             ) : (
               <div className="flex items-center gap-4">
                 <button
-                  className="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-900 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+                  className="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-900 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md cursor-pointer dark:border-cyan-400/20 dark:bg-black/60 dark:text-slate-100 dark:backdrop-blur dark:hover:shadow-[0_0_16px_rgba(34,211,238,0.35)]"
                   onClick={openChainModal}
                   type="button"
                 >
@@ -98,18 +98,21 @@ export default function ConnectWalletButton({
                       />
                     </span>
                   ) : (
-                    <span className="h-6 w-6 rounded-full bg-slate-200" />
+                    <span className="h-6 w-6 rounded-full bg-slate-200 dark:bg-slate-700/60" />
                   )}
                   <span>{chain.name}</span>
                 </button>
                 <button
-                  className="flex items-center gap-3 rounded-full border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-900 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+                  className="flex items-center gap-3 rounded-full border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-900 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md cursor-pointer dark:border-cyan-400/20 dark:bg-black/60 dark:text-slate-100 dark:backdrop-blur dark:hover:shadow-[0_0_16px_rgba(34,211,238,0.35)]"
                   onClick={openAccountModal}
                   type="button"
                 >
                   <span>{balanceLabel}</span>
-                  <span aria-hidden="true" className="h-5 w-px bg-slate-200" />
-                  <span className="flex items-center gap-2 rounded-full bg-slate-100 px-2 py-1">
+                  <span
+                    aria-hidden="true"
+                    className="h-5 w-px bg-slate-200 dark:bg-white/10"
+                  />
+                  <span className="flex items-center gap-2 rounded-full bg-slate-100 px-2 py-1 dark:bg-white/10">
                     <Image
                       alt=""
                       className="h-6 w-6 rounded-full"

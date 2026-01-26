@@ -1,6 +1,7 @@
 import { type BadgeConfig, BadgeRecordStatus } from "@src/types/badge";
 
-export type BadgeStatus = Lowercase<BadgeRecordStatus>;
+export type BadgeStatus = Exclude<Lowercase<BadgeRecordStatus>, "draft">;
+export type BadgeFilter = "all" | BadgeStatus;
 
 export type BadgeListItem = {
   id: string;
