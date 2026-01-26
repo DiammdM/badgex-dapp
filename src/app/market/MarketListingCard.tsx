@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 
 export type MarketListing = {
@@ -17,6 +18,7 @@ export type MarketListing = {
   theme: string;
   listedAt: string;
   linkId: string;
+  imageUrl?: string | null;
 };
 
 type MarketListingCardCopy = {
@@ -52,8 +54,18 @@ export function MarketListingCard({
         </span>
       </div>
       <div className="flex items-center gap-4">
-        <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-200 via-amber-100 to-emerald-100 text-xs font-semibold text-slate-700">
-          {listing.name}
+        <div className="relative flex h-20 w-20 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-amber-200 via-amber-100 to-emerald-100 text-xs font-semibold text-slate-700">
+          {listing.imageUrl ? (
+            <Image
+              alt={listing.name}
+              className="object-cover"
+              fill
+              sizes="80px"
+              src={listing.imageUrl}
+            />
+          ) : (
+            listing.name
+          )}
         </div>
         <div>
           <p className="text-lg font-semibold text-slate-900">{listing.name}</p>
@@ -93,10 +105,10 @@ export function MarketListingCard({
       </div>
       <div className="flex flex-wrap gap-3">
         <button
-          className={`flex-1 rounded-full px-4 py-2 text-xs font-semibold cursor-pointer ${
+          className={`flex-1 rounded-full px-4 py-2 text-xs font-semibold transition cursor-pointer outline outline-1 outline-transparent ${
             isBuyDisabled
               ? "cursor-not-allowed bg-slate-400 text-white/80"
-              : "bg-[linear-gradient(135deg,var(--color-primary)_0%,var(--color-secondary)_100%)] text-primary-foreground"
+              : "bg-[linear-gradient(135deg,var(--color-primary)_0%,var(--color-secondary)_100%)] text-primary-foreground hover:-translate-y-0.5 hover:outline-slate-900/20 dark:hover:outline-cyan-300/60"
           }`}
           disabled={isBuyDisabled}
           onClick={() => onBuyNow(listing)}
@@ -105,7 +117,7 @@ export function MarketListingCard({
           {isBuying ? copy.buying : copy.buyNow}
         </button>
         <Link
-          className="flex-1 rounded-full border border-slate-900/10 bg-white px-4 py-2 text-center text-xs font-semibold text-slate-600 border-bright"
+          className="flex-1 rounded-full border border-slate-900/10 bg-white px-4 py-2 text-center text-xs font-semibold text-slate-600 border-bright hover:-translate-y-0.5"
           href={`/badges/${listing.linkId}`}
         >
           {copy.viewDetails}

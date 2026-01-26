@@ -315,7 +315,7 @@ export default function BadgesPage() {
           left: "max(1.5rem, calc((100vw - 1440px) / 2 + 1.5rem))",
         }}
       >
-        <div className="rounded-[28px] border border-slate-900/10 bg-white/75 p-6 animate-[fade-in-up_0.6s_ease-out_both] lg:h-full lg:overflow-y-auto">
+        <div className="rounded-[28px] border border-slate-900/10 bg-white/75 p-6 animate-[fade-in-up_0.6s_ease-out_both] lg:h-full lg:overflow-y-auto border-bright">
           <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">
             {copy.toolsTitle}
           </p>
@@ -476,7 +476,7 @@ export default function BadgesPage() {
             const accent = accentSet[index % accentSet.length];
             return (
               <div
-                className="flex items-center gap-3 rounded-3xl border border-slate-900/10 bg-white/80 p-4 shadow-sm"
+                className="flex items-center gap-3 rounded-3xl border border-slate-900/10 bg-white/80 p-4 shadow-sm border-bright"
                 key={item.label}
               >
                 <div

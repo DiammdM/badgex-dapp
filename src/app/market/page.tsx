@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { UIEvent } from "react";
+import { ChevronDown } from "lucide-react";
 import { useLanguage } from "@src/components/LanguageProvider";
 import { global, marketActivityContent, marketContent } from "../i18n";
 import {
@@ -573,6 +574,7 @@ export default function MarketPage() {
           theme: resolveThemeLabel(config, language),
           listedAt: formatListedAt(listing.updatedAt, locale),
           linkId,
+          imageUrl: listing.imageUrl ?? null,
         };
       });
 
@@ -745,17 +747,20 @@ export default function MarketPage() {
                   value={searchTerm}
                   onChange={(event) => setSearchTerm(event.target.value)}
                 />
-                <select
-                  className="rounded-full border border-slate-900/10 bg-white px-4 py-2 text-sm cursor-pointer"
-                  value={sortKey}
-                  onChange={(event) => setSortKey(event.target.value)}
-                >
-                  {sortOptions.map((option) => (
-                    <option key={option.id} value={option.id}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
+                <div className="relative">
+                  <select
+                    className="appearance-none rounded-full border border-slate-900/10 bg-white px-4 py-2 pr-10 text-sm cursor-pointer"
+                    value={sortKey}
+                    onChange={(event) => setSortKey(event.target.value)}
+                  >
+                    {sortOptions.map((option) => (
+                      <option key={option.id} value={option.id}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+                </div>
                 <Popover
                   open={isPricePopoverOpen}
                   onOpenChange={setIsPricePopoverOpen}
@@ -870,12 +875,6 @@ export default function MarketPage() {
                     </div>
                   </PopoverContent>
                 </Popover>
-                <button
-                  className="rounded-full border border-slate-900/15 bg-white/70 px-5 py-2 text-sm font-semibold text-slate-700"
-                  type="button"
-                >
-                  {languageDic.onlyBuyable}
-                </button>
               </div>
             </div>
             <div className="mt-6 space-y-6">

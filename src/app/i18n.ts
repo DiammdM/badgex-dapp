@@ -22,6 +22,10 @@ export const layoutCopy = {
     wrongNetwork: "Wrong network",
     footerTitle: "Badgex Badge NFT Platform",
     footerTagline: "Badge - IPFS - Marketplace",
+    location: {
+      label: "Location",
+      home: "Home",
+    },
     footerLinks: {
       build: "Start Building",
       market: "Browse Market",
@@ -40,6 +44,10 @@ export const layoutCopy = {
     wrongNetwork: "网络错误",
     footerTitle: "Badgex 徽章 NFT 平台",
     footerTagline: "徽章 - IPFS - 市场",
+    location: {
+      label: "当前位置",
+      home: "首页",
+    },
     footerLinks: {
       build: "开始生成",
       market: "浏览市场",
@@ -378,7 +386,7 @@ export const marketContent = {
     ],
     feePill: "Platform fee 1.5%",
     latestTitle: "Latest listings",
-    searchPlaceholder: "Search badge",
+    searchPlaceholder: "Search name or tokenId",
     sortOptions: [
       "Sort: Recently listed",
       "Sort: Price low to high",
@@ -474,7 +482,7 @@ export const marketContent = {
     ],
     feePill: "平台费 1.5%",
     latestTitle: "最新上架",
-    searchPlaceholder: "搜索徽章",
+    searchPlaceholder: "搜索名称或 Token ID",
     sortOptions: ["排序：最新上架", "排序：价格升序", "排序：价格降序"],
     priceRange: "价格范围",
     priceRangeMinLabel: "最低价",

@@ -155,7 +155,7 @@ export function BadgeLibrarySection({
               <div className="flex flex-wrap gap-3">
                 {badge.status === "saved" ? (
                   <button
-                    className="rounded-full bg-slate-900 px-4 py-2 text-xs font-semibold text-amber-50 cursor-pointer border-slate-900/10"
+                    className="rounded-full border border-slate-900/10 bg-slate-900 px-4 py-2 text-xs font-semibold text-amber-50 shadow-sm shadow-slate-900/20 transition hover:-translate-y-0.5 hover:bg-slate-800 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60 dark:border-cyan-300/30 dark:bg-cyan-500/10 dark:text-cyan-100 dark:shadow-[0_0_12px_rgba(34,211,238,0.3)] dark:hover:bg-cyan-500/20 dark:hover:shadow-[0_0_18px_rgba(34,211,238,0.45)]"
                     disabled={isMinting}
                     type="button"
                     onClick={() => {
@@ -167,7 +167,7 @@ export function BadgeLibrarySection({
                 ) : null}
                 {badge.status === "listed" ? (
                   <button
-                    className="rounded-full bg-rose-100 px-4 py-2 text-xs font-semibold text-rose-900 cursor-pointer border-slate-900/10"
+                    className="rounded-full border border-slate-900/10 bg-rose-100 px-4 py-2 text-xs font-semibold text-rose-900 shadow-sm shadow-rose-200/60 transition hover:-translate-y-0.5 hover:bg-rose-200 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60 dark:border-rose-300/30 dark:bg-rose-500/10 dark:text-rose-100 dark:shadow-[0_0_12px_rgba(244,63,94,0.25)] dark:hover:bg-rose-500/20 dark:hover:shadow-[0_0_18px_rgba(244,63,94,0.35)]"
                     disabled={isListingBusy}
                     type="button"
                     onClick={() => {
@@ -179,7 +179,7 @@ export function BadgeLibrarySection({
                 ) : null}
                 {badge.status === "minted" ? (
                   <button
-                    className="rounded-full bg-amber-100 px-4 py-2 text-xs font-semibold text-amber-900 cursor-pointer border-slate-900/10"
+                    className="rounded-full border border-slate-900/10 bg-amber-100 px-4 py-2 text-xs font-semibold text-amber-900 shadow-sm shadow-amber-200/60 transition hover:-translate-y-0.5 hover:bg-amber-200 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60 dark:border-amber-300/30 dark:bg-amber-400/10 dark:text-amber-100 dark:shadow-[0_0_12px_rgba(251,191,36,0.25)] dark:hover:bg-amber-400/20 dark:hover:shadow-[0_0_18px_rgba(251,191,36,0.35)]"
                     disabled={isListingBusy}
                     type="button"
                     onClick={() => {
@@ -190,13 +190,13 @@ export function BadgeLibrarySection({
                   </button>
                 ) : null}
                 <Link
-                  className="rounded-full border border-slate-900/10 bg-white px-4 py-2 text-xs font-semibold text-slate-600 border-bright"
+                  className="rounded-full border border-slate-900/10 bg-white px-4 py-2 text-xs font-semibold text-slate-600 border-bright hover:-translate-y-0.5"
                   href={`/badges/${detailId}`}
                 >
                   {languageDic.actions.view}
                 </Link>
                 <button
-                  className="rounded-full border border-slate-900/10 bg-white px-4 py-2 text-xs font-semibold text-slate-600 cursor-pointer"
+                  className="rounded-full border border-slate-900/10 bg-white px-4 py-2 text-xs font-semibold text-slate-600 cursor-pointer hover:-translate-y-0.5"
                   type="button"
                 >
                   {languageDic.actions.delete}

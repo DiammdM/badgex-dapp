@@ -313,13 +313,13 @@ export default function BadgeDetailPage() {
         </div>
         <div className="flex flex-wrap gap-3">
           <Link
-            className="rounded-full border border-slate-900/15 bg-white/70 px-5 py-2 text-sm font-semibold text-slate-700"
+            className="rounded-full border border-slate-900/15 bg-white/70 px-5 py-2 text-sm font-semibold text-slate-700 border-bright"
             href="/badges"
           >
             {copy.back}
           </Link>
           <Link
-            className="rounded-full bg-slate-900 px-5 py-2 text-sm font-semibold text-amber-50 neon-cta"
+            className="rounded-full bg-slate-900 px-5 py-2 text-sm font-semibold text-amber-50 neon-cta border-bright"
             href="/market"
           >
             {copy.viewMarket}
@@ -331,7 +331,7 @@ export default function BadgeDetailPage() {
         className="grid animate-[fade-in-up_0.6s_ease-out_both] gap-8 lg:grid-cols-[0.9fr_1.1fr]"
         style={{ animationDelay: "120ms" }}
       >
-        <div className="rounded-[28px] border border-slate-900/10 bg-white/80 p-6 shadow-lg shadow-slate-900/5">
+        <div className="rounded-[28px] border border-slate-900/10 bg-white/80 p-6 shadow-lg shadow-slate-900/5 border-bright">
           <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">
             <span>{copy.previewTitle}</span>
             <span className="rounded-full border border-slate-900/10 px-3 py-1 text-[10px]">
@@ -359,7 +359,7 @@ export default function BadgeDetailPage() {
         </div>
 
         <div className="space-y-6">
-          <div className="rounded-[28px] border border-slate-900/10 bg-white/80 p-6">
+          <div className="rounded-[28px] border border-slate-900/10 bg-white/80 p-6 border-bright">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold text-slate-900">
                 {copy.onChainTitle}
@@ -411,7 +411,7 @@ export default function BadgeDetailPage() {
             </div>
           </div>
 
-          <div className="rounded-[28px] border border-slate-900/10 bg-white/80 p-6">
+          <div className="rounded-[28px] border border-slate-900/10 bg-white/80 p-6 border-bright">
             <h2 className="text-lg font-semibold text-slate-900">
               {copy.attributesTitle}
             </h2>
@@ -432,7 +432,7 @@ export default function BadgeDetailPage() {
             </div>
           </div>
 
-          <div className="rounded-[28px] border border-slate-900/10 bg-white/80 p-6">
+          <div className="rounded-[28px] border border-slate-900/10 bg-white/80 p-6 border-bright">
             <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">
               <span>{copy.metadataTitle}</span>
               <span className="rounded-full border border-slate-900/10 px-3 py-1 text-[10px]">

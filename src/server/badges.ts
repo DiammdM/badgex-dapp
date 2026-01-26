@@ -344,6 +344,7 @@ export const listMarketBadges = async ({
   hasMore: boolean;
   nextOffset: number;
 }> => {
+  const tokenSearch = search ? normalizeTokenId(search) : "";
   const where = {
     status: BadgeRecordStatus.Listed,
     AND: search
@@ -351,7 +352,7 @@ export const listMarketBadges = async ({
           {
             OR: [
               { name: { contains: search } },
-              { tokenId: { contains: search } },
+              ...(tokenSearch ? [{ tokenId: { contains: tokenSearch } }] : []),
             ],
           },
         ]

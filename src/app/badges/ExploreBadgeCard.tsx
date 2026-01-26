@@ -38,7 +38,7 @@ export function ExploreBadgeCard({
     : "--";
 
   return (
-    <div className="rounded-[26px] border border-slate-900/10 bg-white/75 p-5 shadow-sm">
+    <div className="rounded-[26px] border border-slate-900/10 bg-white/75 p-5 shadow-sm border-bright">
       <div className="flex items-center justify-between">
         <span className="rounded-full bg-slate-900 px-3 py-1 text-xs font-semibold text-amber-100">
           #{displayId}
@@ -99,7 +99,7 @@ export function ExploreBadgeCard({
       </div>
       <div className="mt-5">
         <Link
-          className="block w-full rounded-full border border-slate-900/10 bg-white px-4 py-2 text-center text-xs font-semibold text-slate-600"
+          className="block w-full rounded-full border border-slate-900/10 bg-white px-4 py-2 text-center text-xs font-semibold text-slate-600 border-bright hover:-translate-y-0.5"
           href={`/badges/${displayId}`}
         >
           {copy.viewDetails}
