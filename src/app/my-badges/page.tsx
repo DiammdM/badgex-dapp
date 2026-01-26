@@ -1129,7 +1129,7 @@ export default function MyBadgesPage() {
           </p>
           <div className="flex flex-wrap gap-3">
             <Link
-              className="rounded-full border border-amber-400/70 bg-gradient-to-r from-amber-300 via-amber-400 to-orange-400 px-5 py-2 text-sm font-semibold text-slate-900 shadow-[0_10px_24px_rgba(251,191,36,0.35)] transition hover:-translate-y-0.5 hover:shadow-[0_14px_30px_rgba(251,191,36,0.45)] dark:border-cyan-300/45 dark:from-cyan-400/30 dark:via-sky-400/30 dark:to-emerald-400/30 dark:text-cyan-100 dark:shadow-[0_0_18px_rgba(34,211,238,0.35)] dark:hover:shadow-[0_0_26px_rgba(34,211,238,0.45)]"
+              className="rounded-full border border-slate-900/10 bg-slate-900 px-5 py-2 text-sm font-semibold text-amber-50 shadow-sm shadow-slate-900/20 transition hover:-translate-y-0.5 hover:bg-slate-800 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60 dark:border-cyan-300/30 dark:bg-cyan-500/10 dark:text-cyan-100 dark:shadow-[0_0_12px_rgba(34,211,238,0.3)] dark:hover:bg-cyan-500/20 dark:hover:shadow-[0_0_18px_rgba(34,211,238,0.45)]"
               href="/builder"
             >
               {languageDic.newBadge}

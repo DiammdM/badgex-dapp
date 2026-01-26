@@ -155,7 +155,7 @@ export function BadgeLibrarySection({
               <div className="flex flex-wrap gap-3">
                 {badge.status === "saved" ? (
                   <button
-                    className="rounded-full border border-slate-900/10 bg-slate-900 px-4 py-2 text-xs font-semibold text-amber-50 shadow-sm shadow-slate-900/20 transition hover:-translate-y-0.5 hover:bg-slate-800 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60 dark:border-cyan-300/30 dark:bg-cyan-500/10 dark:text-cyan-100 dark:shadow-[0_0_12px_rgba(34,211,238,0.3)] dark:hover:bg-cyan-500/20 dark:hover:shadow-[0_0_18px_rgba(34,211,238,0.45)]"
+                    className="rounded-full border border-emerald-300/50 bg-emerald-100 px-4 py-2 text-xs font-semibold text-emerald-900 shadow-sm shadow-emerald-200/60 transition hover:-translate-y-0.5 hover:bg-emerald-200 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60 dark:border-emerald-300/30 dark:bg-emerald-500/10 dark:text-emerald-100 dark:shadow-[0_0_12px_rgba(16,185,129,0.25)] dark:hover:bg-emerald-500/20 dark:hover:shadow-[0_0_18px_rgba(16,185,129,0.35)]"
                     disabled={isMinting}
                     type="button"
                     onClick={() => {
