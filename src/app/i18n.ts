@@ -58,210 +58,310 @@ export const layoutCopy = {
 
 export const homeContent = {
   en: {
-    heroTag: "Badge NFT Platform",
-    heroTitle: "Create, save, and trade badge NFTs in one flow",
-    heroDescription:
-      "From badge generation to IPFS to on-chain minting, Badgex keeps the entire badge lifecycle in a single, focused workflow.",
-    primaryCta: "Start Building",
-    secondaryCta: "Browse Market",
-    highlights: [
-      { label: "Saved", value: "128", note: "IPFS assets" },
-      { label: "Minted", value: "42", note: "On-chain NFTs" },
-      { label: "Listed", value: "16", note: "Fixed price" },
-    ],
-    preview: {
-      title: "Badge Preview",
-      nameLabel: "Name",
-      attributesLabel: "Attributes",
-      badgeTitle: "Badge: Contributor",
-      attributes: ["Category: Builder", "Theme: Amber"],
-      note: "Save to upload PNG + metadata to IPFS and generate tokenURI.",
-    },
-    flowTitle: "A streamlined flow from creation to trading",
-    flowDescription:
-      "Badgex focuses on the MVP essentials: create, save, mint, list, and buy. Every step is mapped into a clean, single workflow.",
-    steps: [
-      {
-        title: "Design a badge",
-        description: "Pick theme, shape, border, and text with live preview.",
-      },
-      {
-        title: "Save to IPFS",
-        description: "Generate PNG + metadata and keep it in your library.",
-      },
-      {
-        title: "Mint + trade",
-        description: "Mint on-chain and list with a fixed price in seconds.",
-      },
-    ],
-    flowCta: "Open Badge Builder",
-    workspace: {
-      title: "Workspace Snapshot",
-      subtitle: "My Badges",
-      badgeTitle: "Badge pipeline",
-      statuses: [
-        { title: "Saved / 4", note: "Badge pipeline" },
-        { title: "Minted / 4", note: "Badge pipeline" },
-        { title: "Listed / 4", note: "Badge pipeline" },
-      ],
-    },
-    featured: {
-      title: "Featured listings",
-      items: [
-        {
-          name: "Contributor #12",
-          owner: "0xA91...B32",
-          price: "0.12 ETH",
-          theme: "Sandstone Amber",
-        },
-        {
-          name: "Builder #03",
-          owner: "0xD44...8F9",
-          price: "0.08 ETH",
-          theme: "Seafoam Mint",
-        },
-        {
-          name: "Community #21",
-          owner: "0x75C...19A",
-          price: "0.15 ETH",
-          theme: "Copper Dusk",
-        },
-      ],
-      cta: "Go to market",
-    },
-    modules: {
-      title: "Module",
-      items: [
-        {
-          title: "Badge Builder",
-          description:
-            "Compose SVG-based badges with theme, shape, and icon presets.",
-          href: "/builder",
-          action: "Build a badge",
-        },
-        {
-          title: "IPFS + Metadata",
-          description:
-            "Upload PNG assets, generate tokenURI, and keep saved badges synced.",
-          href: "/my-badges",
-          action: "Manage badges",
-        },
-        {
-          title: "Marketplace",
-          description:
-            "List fixed-price badges, track royalties, and buy instantly.",
-          href: "/market",
-          action: "Browse market",
-        },
-      ],
-    },
-    closing: {
-      title: "Design your first badge today",
+    hero: {
+      tag: "Badge Ops Platform",
+      title: "Cyberpunk-grade badge minting, storage, and trading.",
       description:
-        "Configure theme, border, and text in the builder. Once saved, you can mint and list it from your badge dashboard.",
-      primary: "Build now",
+        "Badgex unifies badge design, IPFS permanence, and marketplace ops in one glass dashboard. Track minting status, manage drops, and coordinate community distribution with precision.",
+      primaryCta: "Open Badge Builder",
+      secondaryCta: "Explore Market",
+      badges: [
+        "On-chain mint",
+        "IPFS pinned",
+        "Royalty-safe",
+        "Marketplace ready",
+      ],
+    },
+    stats: [
+      { label: "Total badges", value: "18,240", note: "Across all drops" },
+      { label: "Active creators", value: "1,284", note: "Last 30 days" },
+      { label: "Active listings", value: "312", note: "Live offers" },
+    ],
+    terminal: {
+      title: "Ops Console",
+      subtitle: "Live badge flow",
+      status: { label: "Sync status", value: "Stable" },
+      poolMetricLabel: "Supply",
+      stats: [
+        { label: "24h mints", value: "1,284" },
+        { label: "Avg confirm", value: "12.4s" },
+        { label: "Creator rewards", value: "2.1 ETH" },
+      ],
+      pools: [
+        {
+          name: "Creator Stream",
+          apy: "Mint 12s",
+          tvl: "12k",
+          risk: "Curated",
+        },
+        {
+          name: "Community Drops",
+          apy: "Mint 9s",
+          tvl: "8k",
+          risk: "Open access",
+        },
+        {
+          name: "Event Campaign",
+          apy: "Mint 6s",
+          tvl: "2k",
+          risk: "Time-boxed",
+        },
+      ],
+    },
+    vaults: {
+      title: "Launch badge programs, not just files",
+      description:
+        "Create badge programs with access gates, scheduling, and distribution rules. Each program includes metadata integrity checks and market readiness.",
+      metricLabel: "Supply",
+      items: [
+        {
+          name: "Creator Track",
+          description:
+            "Auto-route mint fees and secondary royalties to verified creators.",
+          apy: "Drop window 30d",
+          tvl: "5k",
+          tags: ["Allowlist", "Royalty guard"],
+          action: "Open track",
+        },
+        {
+          name: "Community Signal",
+          description:
+            "Reward collectors and contributors with targeted badge waves.",
+          apy: "Drop window 14d",
+          tvl: "7k",
+          tags: ["Airdrop ready", "Collector tiers"],
+          action: "Inspect flow",
+        },
+        {
+          name: "Event Campaign",
+          description:
+            "Time-boxed campaigns with rapid minting and instant settlement.",
+          apy: "Drop window 48h",
+          tvl: "2k",
+          tags: ["Fast mint", "Instant settle"],
+          action: "Launch event",
+        },
+      ],
+    },
+    features: {
+      title: "Designed like an ops terminal",
+      description:
+        "Cyberpunk glass surfaces meet practical ops: realtime status, audit trails, and granular permissions.",
+      items: [
+        {
+          title: "Live audit trail",
+          description:
+            "Track every mint, list, and trade event in a single timeline.",
+        },
+        {
+          title: "IPFS permanence",
+          description:
+            "Pinned metadata and imagery stay consistent across transfers.",
+        },
+        {
+          title: "Royalty enforcement",
+          description:
+            "Built-in marketplace checks keep creator fees intact.",
+        },
+        {
+          title: "Team controls",
+          description:
+            "Scoped roles for creators, curators, and market operators.",
+        },
+      ],
+    },
+    steps: {
+      title: "From concept to liquidity",
+      description:
+        "Build, save, and list in a single flow. No context switching.",
+      items: [
+        {
+          title: "Compose the badge",
+          description:
+            "Theme, shape, border, icon, and copy with instant preview.",
+        },
+        {
+          title: "Pin to IPFS",
+          description:
+            "Generate metadata, upload assets, and lock the tokenURI.",
+        },
+        {
+          title: "Mint + distribute",
+          description:
+            "Mint on-chain, list instantly, and monitor trading signals.",
+        },
+      ],
+    },
+    faq: {
+      title: "FAQ",
+      description:
+        "Answers to the most common questions about minting, listing, and royalties.",
+      items: [
+        {
+          question: "Do I need a wallet to browse?",
+          answer: "No. You can explore listings before connecting a wallet.",
+        },
+        {
+          question: "Can I edit metadata after minting?",
+          answer:
+            "Minted badges are immutable. Create a new version to update.",
+        },
+        {
+          question: "How are royalties handled?",
+          answer:
+            "Marketplace listings enforce creator royalties on every sale.",
+        },
+      ],
+    },
+    cta: {
+      title: "Launch the next badge drop",
+      description:
+        "Start in the builder, pin to IPFS, and ship a market-ready collection in minutes.",
+      primary: "Start building",
       secondary: "Manage badges",
     },
   },
   zh: {
-    heroTag: "徽章 NFT 平台",
-    heroTitle: "一体化完成徽章 NFT 的生成、保存与交易",
-    heroDescription:
-      "从徽章生成、IPFS 保存到链上铸造，Badgex 将全流程集中在一个工作台。",
-    primaryCta: "开始生成",
-    secondaryCta: "浏览市场",
-    highlights: [
-      { label: "已保存", value: "128", note: "IPFS 资产" },
-      { label: "已铸造", value: "42", note: "链上 NFT" },
-      { label: "已上架", value: "16", note: "固定价格" },
-    ],
-    preview: {
-      title: "徽章预览",
-      nameLabel: "名称",
-      attributesLabel: "属性",
-      badgeTitle: "徽章：贡献者",
-      attributes: ["类型：建造者", "主题：琥珀"],
-      note: "保存后将 PNG 与 metadata 上传至 IPFS，并生成 tokenURI。",
-    },
-    flowTitle: "从生成到交易的顺畅流程",
-    flowDescription: "Badgex 聚焦 MVP 核心步骤：生成、保存、铸造、上架、购买。",
-    steps: [
-      {
-        title: "设计徽章",
-        description: "选择主题、形状、边框与文本，实时预览。",
-      },
-      {
-        title: "保存到 IPFS",
-        description: "生成 PNG + metadata 并写入徽章库。",
-      },
-      {
-        title: "铸造与交易",
-        description: "上链铸造并一键固定价格上架。",
-      },
-    ],
-    flowCta: "打开徽章生成器",
-    workspace: {
-      title: "工作台概览",
-      subtitle: "我的徽章",
-      badgeTitle: "徽章流程",
-      statuses: [
-        { title: "已保存 / 4", note: "徽章流程" },
-        { title: "已铸造 / 4", note: "徽章流程" },
-        { title: "已上架 / 4", note: "徽章流程" },
-      ],
-    },
-    featured: {
-      title: "精选上架",
-      items: [
-        {
-          name: "贡献者 #12",
-          owner: "0xA91...B32",
-          price: "0.12 ETH",
-          theme: "砂岩琥珀",
-        },
-        {
-          name: "建造者 #03",
-          owner: "0xD44...8F9",
-          price: "0.08 ETH",
-          theme: "海沫薄荷",
-        },
-        {
-          name: "社群 #21",
-          owner: "0x75C...19A",
-          price: "0.15 ETH",
-          theme: "铜色暮光",
-        },
-      ],
-      cta: "进入市场",
-    },
-    modules: {
-      title: "模块",
-      items: [
-        {
-          title: "徽章生成器",
-          description: "通过主题、形状、图标模板组合 SVG 徽章。",
-          href: "/builder",
-          action: "开始生成",
-        },
-        {
-          title: "IPFS + Metadata",
-          description: "上传 PNG 资产，生成 tokenURI，并同步已保存资产。",
-          href: "/my-badges",
-          action: "管理徽章",
-        },
-        {
-          title: "市场",
-          description: "固定价格上架，追踪版税，快速成交。",
-          href: "/market",
-          action: "浏览市场",
-        },
-      ],
-    },
-    closing: {
-      title: "现在开始设计你的首枚徽章",
+    hero: {
+      tag: "徽章运营平台",
+      title: "赛博朋克质感的徽章铸造、存储与交易平台。",
       description:
-        "在生成器中配置主题、边框与文本。保存后即可在徽章面板铸造与上架。",
-      primary: "立即生成",
+        "Badgex 将徽章生成、IPFS 永久存储与市场交易整合为终端式流程。实时监控状态，管理投放计划，并精准协调社区分发。",
+      primaryCta: "打开徽章生成器",
+      secondaryCta: "进入市场",
+      badges: ["链上铸造", "IPFS 固定存储", "版税保障", "市场就绪"],
+    },
+    stats: [
+      { label: "徽章总量", value: "18,240", note: "全量投放汇总" },
+      { label: "活跃创作者", value: "1,284", note: "近 30 天" },
+      { label: "上架数量", value: "312", note: "实时挂单" },
+    ],
+    terminal: {
+      title: "运营控制台",
+      subtitle: "徽章流程实时快照",
+      status: { label: "同步状态", value: "稳定运行" },
+      poolMetricLabel: "总量",
+      stats: [
+        { label: "24h 铸造", value: "1,284" },
+        { label: "平均确认", value: "12.4s" },
+        { label: "创作者收益", value: "2.1 ETH" },
+      ],
+      pools: [
+        {
+          name: "创作者流",
+          apy: "铸造 12s",
+          tvl: "12k",
+          risk: "策展",
+        },
+        {
+          name: "社区投放",
+          apy: "铸造 9s",
+          tvl: "8k",
+          risk: "开放参与",
+        },
+        {
+          name: "活动计划",
+          apy: "铸造 6s",
+          tvl: "2k",
+          risk: "限时",
+        },
+      ],
+    },
+    vaults: {
+      title: "上线徽章计划，而不只是文件",
+      description:
+        "用访问规则、时间计划与分发机制组织徽章计划。每个计划包含 metadata 校验与上架准备。",
+      metricLabel: "总量",
+      items: [
+        {
+          name: "创作者计划",
+          description: "自动分配铸造费用与二级市场版税。",
+          apy: "投放周期 30 天",
+          tvl: "5k",
+          tags: ["Allowlist", "版税保障"],
+          action: "打开计划",
+        },
+        {
+          name: "社区信号",
+          description: "为收藏者与贡献者投放目标徽章。",
+          apy: "投放周期 14 天",
+          tvl: "7k",
+          tags: ["空投友好", "收藏分层"],
+          action: "查看流程",
+        },
+        {
+          name: "活动计划",
+          description: "限时活动支持快速铸造与即时结算。",
+          apy: "投放周期 48 小时",
+          tvl: "2k",
+          tags: ["快速铸造", "即时结算"],
+          action: "发起活动",
+        },
+      ],
+    },
+    features: {
+      title: "终端级运营体验",
+      description:
+        "赛博朋克玻璃质感与高效运营并存：实时状态、审计轨迹、细粒度权限。",
+      items: [
+        {
+          title: "实时审计轨迹",
+          description: "在一条时间线上追踪铸造、上架与成交。",
+        },
+        {
+          title: "IPFS 永久存储",
+          description: "元数据与图像稳定可追溯。",
+        },
+        {
+          title: "版税强制执行",
+          description: "市场交易自动结算创作者收益。",
+        },
+        {
+          title: "团队权限控制",
+          description: "为创作者、策展人、运营提供角色权限。",
+        },
+      ],
+    },
+    steps: {
+      title: "从概念到流动性",
+      description: "生成、保存、上架一条链路完成。",
+      items: [
+        {
+          title: "组合徽章",
+          description: "主题、形状、边框、图标与文本实时预览。",
+        },
+        {
+          title: "固定到 IPFS",
+          description: "生成 metadata、上传资产并锁定 tokenURI。",
+        },
+        {
+          title: "铸造并分发",
+          description: "链上铸造、即时上架、持续监控交易。",
+        },
+      ],
+    },
+    faq: {
+      title: "常见问题",
+      description: "关于铸造、上架与版税结算的常见说明。",
+      items: [
+        {
+          question: "浏览需要连接钱包吗？",
+          answer: "无需连接钱包即可查看市场与徽章详情。",
+        },
+        {
+          question: "铸造后还能修改 metadata 吗？",
+          answer: "已铸造徽章不可修改，可新建版本更新。",
+        },
+        {
+          question: "版税如何结算？",
+          answer: "市场成交自动执行创作者版税分配。",
+        },
+      ],
+    },
+    cta: {
+      title: "开启你的下一次徽章发行",
+      description: "从生成器开始，固定到 IPFS，几分钟内完成上架。",
+      primary: "开始生成",
       secondary: "管理徽章",
     },
   },
