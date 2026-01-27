@@ -14,16 +14,26 @@ type LanguageContextValue = {
 const LanguageContext = createContext<LanguageContextValue | null>(null);
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [language, setLanguageState] = useState<Language>(() => {
-    if (typeof window === "undefined") return defaultLanguage;
-    const stored = window.localStorage.getItem(STORAGE_KEY);
-    return stored ? getLanguage(stored) : defaultLanguage;
-  });
+  const [language, setLanguageState] = useState<Language>(defaultLanguage);
+  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
+    const stored = window.localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      const next = getLanguage(stored);
+      setLanguageState(next);
+      document.documentElement.lang = next;
+    } else {
+      document.documentElement.lang = language;
+    }
+    setHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
     window.localStorage.setItem(STORAGE_KEY, language);
     document.documentElement.lang = language;
-  }, [language]);
+  }, [hydrated, language]);
 
   const value = useMemo(
     () => ({

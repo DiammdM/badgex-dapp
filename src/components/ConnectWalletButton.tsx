@@ -26,7 +26,7 @@ export default function ConnectWalletButton({
   });
 
   const buttonClass =
-    "rounded-full border border-slate-900/20 bg-slate-900 px-5 py-2 text-sm font-semibold text-amber-50 shadow-sm transition hover:-translate-y-0.5 hover:bg-slate-800 cursor-pointer dark:border-cyan-400/40 dark:bg-cyan-500/25 dark:text-slate-900 dark:hover:bg-cyan-400/40 dark:shadow-[0_0_18px_rgba(34,211,238,0.45)]";
+    "rounded-full border border-slate-900/20 bg-slate-900 px-5 py-2 text-sm font-semibold text-amber-50 shadow-sm transition hover:-translate-y-0.5 hover:bg-slate-800 cursor-pointer dark:border-cyan-400/40 dark:bg-cyan-500/25 dark:text-slate-100 dark:hover:bg-cyan-400/40 dark:shadow-[0_0_18px_rgba(34,211,238,0.45)]";
 
   return (
     <ConnectButton.Custom>

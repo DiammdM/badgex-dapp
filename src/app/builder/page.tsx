@@ -2,7 +2,15 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { Flame, Leaf, Star, Sun, Zap, type LucideIcon } from "lucide-react";
+import {
+  ChevronDown,
+  Flame,
+  Leaf,
+  Star,
+  Sun,
+  Zap,
+  type LucideIcon,
+} from "lucide-react";
 import { useLanguage } from "@src/components/LanguageProvider";
 import {
   BADGE_BORDER_OPTIONS,
@@ -18,8 +26,12 @@ import {
   type BadgeIconId,
 } from "@src/types/badge-options";
 import { builderContent, global } from "../i18n";
-import { BadgePropertyNames } from "@src/types/badge";
-import { BadgeApiPayload } from "@src/types/badge";
+import {
+  BadgeApiPayload,
+  BadgeConfig,
+  BadgePropertyNames,
+} from "@src/types/badge";
+import { buildBadgeMetadata } from "@src/utils/badgeMetadata";
 import { useConnection } from "wagmi";
 import {
   AlertDialog,
@@ -137,7 +149,6 @@ export default function BuilderPage() {
   const selectedCategoryEnglish =
     selectedCategory?.englishLabel ?? categoryOptions[0].englishLabel;
   const selectedShapeLabel = selectedShape?.label ?? shapeOptions[0].label;
-  const selectedThemeEnglishLabel = selectedTheme?.englishLabel ?? "";
   const displayText = badgeText.trim().slice(0, 10) || languageDic.previewText;
   const displayName = badgeName.trim() || languageDic.metadataPreview.name;
   const displayDescription =
@@ -148,22 +159,34 @@ export default function BuilderPage() {
   const iconY = 190;
   const textY = Icon ? 340 : 300;
 
-  const metadataPreview = useMemo(
+  const badgeConfig = useMemo<BadgeConfig>(
     () => ({
-      name: displayName,
-      description: displayDescription,
-      image: "ipfs://<image_cid>",
-      attributes: [
-        { trait_type: "Category", value: selectedCategoryEnglish },
-        { trait_type: "Theme", value: selectedThemeEnglishLabel },
-      ],
+      [BadgePropertyNames.Theme]: selectedTheme.id,
+      [BadgePropertyNames.Shape]: selectedShapeId,
+      [BadgePropertyNames.Border]: selectedBorderId,
+      [BadgePropertyNames.Icon]: selectedIcon.id,
+      [BadgePropertyNames.Text]: displayText,
+      [BadgePropertyNames.Category]: selectedCategoryEnglish,
     }),
     [
-      displayDescription,
-      displayName,
+      displayText,
+      selectedBorderId,
       selectedCategoryEnglish,
-      selectedThemeEnglishLabel,
+      selectedIcon.id,
+      selectedShapeId,
+      selectedTheme.id,
     ]
+  );
+
+  const metadataPreview = useMemo(
+    () =>
+      buildBadgeMetadata(
+        displayName,
+        badgeConfig,
+        "<image_cid>",
+        displayDescription
+      ),
+    [badgeConfig, displayDescription, displayName]
   );
 
   const metadataJson = JSON.stringify(metadataPreview, null, 2);
@@ -183,14 +206,7 @@ export default function BuilderPage() {
       userId: address,
       name: displayName,
       description: displayDescription,
-      config: {
-        [BadgePropertyNames.Theme]: selectedTheme.id,
-        [BadgePropertyNames.Shape]: selectedShapeId,
-        [BadgePropertyNames.Border]: selectedBorderId,
-        [BadgePropertyNames.Icon]: selectedIcon.id,
-        [BadgePropertyNames.Text]: displayText,
-        [BadgePropertyNames.Category]: selectedCategoryEnglish,
-      },
+      config: badgeConfig,
     };
 
     if (saveStatus === "saving") return;
@@ -327,19 +343,22 @@ export default function BuilderPage() {
               <label className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">
                 {languageDic.category}
               </label>
-              <select
-                className="mt-2 w-full rounded-2xl border border-slate-900/10 bg-white px-4 py-3 text-sm text-slate-800 focus:border-slate-900/40 focus:outline-none"
-                onChange={(event) =>
-                  setCategoryId(event.target.value as BadgeCategoryValue)
-                }
-                value={categoryId}
-              >
-                {categoryOptions.map((category) => (
-                  <option key={category.id} value={category.id}>
-                    {category.label}
-                  </option>
-                ))}
-              </select>
+              <div className="relative mt-2">
+                <select
+                  className="w-full appearance-none rounded-2xl border border-slate-900/10 bg-white px-4 py-3 pr-10 text-sm text-slate-800 focus:border-slate-900/40 focus:outline-none"
+                  onChange={(event) =>
+                    setCategoryId(event.target.value as BadgeCategoryValue)
+                  }
+                  value={categoryId}
+                >
+                  {categoryOptions.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.label}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+              </div>
             </div>
             <div>
               <label className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">

@@ -11,11 +11,9 @@ import {
   BadgeRecordStatus,
   MarketPurchaseRecord,
   CreateBadgeInput,
-  Metadata,
-  MetaAttribute,
-  BadgePropertyNames,
 } from "@src/types/badge";
 import { uploadBadgeImage, uploadBadgeMetadata } from "./ipfs";
+import { buildBadgeMetadata } from "@src/utils/badgeMetadata";
 
 const IPFS_PIC_PREFIX = process.env.IPFS_PIC_PREFIX ?? "";
 
@@ -64,32 +62,6 @@ const matchesConfigFilters = (
   if (filters.shape && data.Shape !== filters.shape) return false;
   if (filters.icon && data.Icon !== filters.icon) return false;
   return true;
-};
-
-const buildBadgeMetadata = (
-  name: string,
-  config: BadgeConfig,
-  imageCid: string,
-  description?: string
-): Metadata => {
-  const attributes: MetaAttribute[] = [
-    { trait_type: BadgePropertyNames.Category, value: config.Category },
-    { trait_type: BadgePropertyNames.Theme, value: config.Theme },
-    { trait_type: BadgePropertyNames.Shape, value: config.Shape },
-    { trait_type: BadgePropertyNames.Border, value: config.Border },
-    { trait_type: BadgePropertyNames.Icon, value: config.Icon },
-    { trait_type: BadgePropertyNames.Text, value: config.Text },
-  ];
-
-  const metadata: Metadata = {
-    name,
-    image: `ipfs://${imageCid}`,
-    attributes,
-  };
-  if (description) {
-    metadata.description = description;
-  }
-  return metadata;
 };
 
 export const listBadgesForUser = async (
