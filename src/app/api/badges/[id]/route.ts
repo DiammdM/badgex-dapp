@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { updateBadgeStatusForUser } from "@src/server/badges";
+import { deleteBadgeForUser, updateBadgeStatusForUser } from "@src/server/badges";
 import { BadgeRecordStatus } from "@src/types/badge";
 import { parseJson } from "@src/utils/request";
 
@@ -74,7 +74,10 @@ export async function PATCH(
     });
 
     if (result.count === 0) {
-      return NextResponse.json({ error: "Badge not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Badge not found or cannot be deleted" },
+        { status: 404 }
+      );
     }
 
     return NextResponse.json({ ok: true });
@@ -82,6 +85,34 @@ export async function PATCH(
     console.error("Failed to update badge status", error);
     return NextResponse.json(
       { error: "Failed to update badge status" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const body = await parseJson<{ userId?: `0x${string}` }>(request);
+    const userId = body.userId;
+
+    if (!userId) {
+      return NextResponse.json({ error: "Missing userId" }, { status: 400 });
+    }
+
+    const result = await deleteBadgeForUser({ userId, badgeId: id });
+    if (result.count === 0) {
+      return NextResponse.json({ error: "Badge not found" }, { status: 404 });
+    }
+
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    console.error("Failed to delete badge", error);
+    return NextResponse.json(
+      { error: "Failed to delete badge" },
       { status: 500 }
     );
   }

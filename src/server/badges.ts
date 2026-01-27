@@ -661,6 +661,24 @@ export const updateBadgeStatusByTokenUri = async ({
   });
 };
 
+export const deleteBadgeForUser = async ({
+  userId,
+  badgeId,
+}: {
+  userId: string;
+  badgeId: string;
+}) => {
+  return prisma.badgeRecord.deleteMany({
+    where: {
+      id: badgeId,
+      userId,
+      status: {
+        in: [BadgeRecordStatus.Saved, BadgeRecordStatus.Draft],
+      },
+    },
+  });
+};
+
 export const finalizeMarketPurchase = async ({
   badgeId,
   buyer,

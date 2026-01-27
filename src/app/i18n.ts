@@ -656,6 +656,18 @@ export const myBadgesContent = {
       delete: "Delete",
       notListed: "Not listed",
     },
+    confirmDialog: {
+      cancelTitle: "Cancel listing?",
+      cancelDescription: "This badge will be removed from the marketplace.",
+      deleteTitle: "Delete badge?",
+      deleteDescription: "This action cannot be undone.",
+      confirm: "Confirm",
+      cancel: "Cancel",
+    },
+    deleteFeedback: {
+      success: "Badge deleted",
+      error: "Failed to delete badge",
+    },
     mintFeedback: {
       success: "Mint succeeded",
       error: "Mint failed",
@@ -777,6 +789,18 @@ export const myBadgesContent = {
       view: "查看详情",
       delete: "删除",
       notListed: "未上架",
+    },
+    confirmDialog: {
+      cancelTitle: "确认取消上架？",
+      cancelDescription: "徽章将从市场移除。",
+      deleteTitle: "确认删除徽章？",
+      deleteDescription: "删除后无法恢复。",
+      confirm: "确认",
+      cancel: "取消",
+    },
+    deleteFeedback: {
+      success: "徽章已删除",
+      error: "删除失败",
     },
     mintFeedback: {
       success: "铸造成功",

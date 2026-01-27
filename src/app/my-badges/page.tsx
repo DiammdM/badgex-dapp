@@ -82,18 +82,19 @@ export default function MyBadgesPage() {
   const [cancelError, setCancelError] = useState<string | null>(null);
   const [mintContext, setMintContext] = useState<MintContext | null>(null);
   const [mintTxHash, setMintTxHash] = useState<`0x${string}` | undefined>(
-    undefined
+    undefined,
   );
   const [listingTxHash, setListingTxHash] = useState<`0x${string}` | undefined>(
-    undefined
+    undefined,
   );
   const [listingContext, setListingContext] = useState<ListingContext | null>(
-    null
+    null,
   );
   const [cancelContext, setCancelContext] = useState<CancelContext | null>(
-    null
+    null,
   );
   const [isApproving, setIsApproving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [cancelTxHash, setCancelTxHash] = useState<`0x${string}` | undefined>();
   const [listingDialog, setListingDialog] = useState<{
     open: boolean;
@@ -135,7 +136,7 @@ export default function MyBadgesPage() {
     setLoading(true);
     try {
       const response = await fetch(
-        `/api/badges?userId=${encodeURIComponent(address)}`
+        `/api/badges?userId=${encodeURIComponent(address)}`,
       );
       if (!response.ok) {
         throw new Error("Failed to load badges");
@@ -164,7 +165,7 @@ export default function MyBadgesPage() {
     (error: unknown) => {
       if (error instanceof BaseError) {
         const reverted = error.walk(
-          (err) => err instanceof ContractFunctionRevertedError
+          (err) => err instanceof ContractFunctionRevertedError,
         ) as ContractFunctionRevertedError | null;
         const errorName = reverted?.data?.errorName;
         if (errorName) {
@@ -180,7 +181,7 @@ export default function MyBadgesPage() {
         return error.message;
       }
     },
-    [languageDic.marketplaceErrors]
+    [languageDic.marketplaceErrors],
   );
   const resolveMintErrorMessage = useCallback(
     (error: unknown) => {
@@ -188,14 +189,14 @@ export default function MyBadgesPage() {
       if (error instanceof BaseError) {
         const rejected = error.walk(
           (err) =>
-            (err as { name?: string }).name === "UserRejectedRequestError"
+            (err as { name?: string }).name === "UserRejectedRequestError",
         );
         if (rejected) {
           return languageDic.mintErrors.userRejected;
         }
 
         const reverted = error.walk(
-          (err) => err instanceof ContractFunctionRevertedError
+          (err) => err instanceof ContractFunctionRevertedError,
         ) as ContractFunctionRevertedError | null;
         const errorName = reverted?.data?.errorName;
         if (errorName) {
@@ -236,7 +237,7 @@ export default function MyBadgesPage() {
 
       return fallback;
     },
-    [languageDic.mintFeedback.error, languageDic.mintErrors]
+    [languageDic.mintFeedback.error, languageDic.mintErrors],
   );
 
   const clearMintContext = useCallback(() => {
@@ -278,7 +279,7 @@ export default function MyBadgesPage() {
 
       void loadBadges();
     },
-    [address, loadBadges]
+    [address, loadBadges],
   );
 
   const finalizeMintFromEvent = useCallback(
@@ -308,7 +309,7 @@ export default function MyBadgesPage() {
       setMintTxHash(undefined);
       void loadBadges();
     },
-    [languageDic.mintFeedback.success, clearMintContext, loadBadges]
+    [languageDic.mintFeedback.success, clearMintContext, loadBadges],
   );
 
   const openListingDialog = useCallback((badge: BadgeListItem) => {
@@ -367,7 +368,7 @@ export default function MyBadgesPage() {
       setListingTxHash(undefined);
       void loadBadges();
     },
-    [loadBadges]
+    [loadBadges],
   );
 
   useEffect(() => {
@@ -629,7 +630,7 @@ export default function MyBadgesPage() {
     if (!cancelReceiptError || !cancelTxHash) return;
     setCancelError(
       resolveMarketErrorMessage(cancelReceiptError) ??
-        languageDic.listingDialog.txError
+        languageDic.listingDialog.txError,
     );
     setCancelContext(null);
     setCancelTxHash(undefined);
@@ -666,7 +667,7 @@ export default function MyBadgesPage() {
             ? (badge.config as Partial<BadgeConfig>)
             : {};
         const theme = BADGE_THEME_OPTIONS.find(
-          (option) => option.id === config.Theme
+          (option) => option.id === config.Theme,
         )?.labels[language];
         const updated = new Date(badge.updatedAt).toLocaleDateString(locale, {
           year: "numeric",
@@ -678,9 +679,9 @@ export default function MyBadgesPage() {
           typeof badge.tokenUri === "string"
             ? badge.tokenUri
             : typeof (badge as { tokenURI?: string | null }).tokenURI ===
-              "string"
-            ? (badge as { tokenURI?: string }).tokenURI
-            : undefined;
+                "string"
+              ? (badge as { tokenURI?: string }).tokenURI
+              : undefined;
         const imageCid = badge.imageCid ?? getCidFromIpfs(badge.ipfsUrl);
         const imageUrl =
           typeof badge.imageUrl === "string" && badge.imageUrl
@@ -718,13 +719,13 @@ export default function MyBadgesPage() {
 
   const badgeStats = useMemo(() => {
     const saved = badges.filter(
-      (badge) => badge.status === BadgeRecordStatus.Saved
+      (badge) => badge.status === BadgeRecordStatus.Saved,
     ).length;
     const minted = badges.filter(
-      (badge) => badge.status === BadgeRecordStatus.Minted
+      (badge) => badge.status === BadgeRecordStatus.Minted,
     ).length;
     const listed = badges.filter(
-      (badge) => badge.status === BadgeRecordStatus.Listed
+      (badge) => badge.status === BadgeRecordStatus.Listed,
     ).length;
     return { saved, minted, listed };
   }, [badges]);
@@ -910,6 +911,54 @@ export default function MyBadgesPage() {
       setCancelingId(null);
     }
   };
+
+  const deleteBadge = useCallback(
+    async (badge: BadgeListItem) => {
+      if (!address) {
+        toast.error(
+          languageDic.deleteFeedback?.error ?? "Failed to delete badge",
+        );
+        return;
+      }
+
+      try {
+        setIsDeleting(true);
+        const response = await fetch(`/api/badges/${badge.id}`, {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId: address }),
+        });
+
+        if (!response.ok) {
+          const payload = await response.json().catch(() => null);
+          throw new Error(payload?.error ?? "Failed to delete badge");
+        }
+
+        toast.success(
+          languageDic.deleteFeedback?.success ?? "Badge deleted successfully",
+          {
+            className:
+              "border-rose-200 bg-rose-50 text-rose-900 dark:border-rose-300/30 dark:bg-rose-500/10 dark:text-rose-100",
+          },
+        );
+        await loadBadges();
+      } catch (error) {
+        const message =
+          error instanceof Error
+            ? error.message
+            : (languageDic.deleteFeedback?.error ?? "Failed to delete badge");
+        toast.error(message);
+      } finally {
+        setIsDeleting(false);
+      }
+    },
+    [
+      address,
+      languageDic.deleteFeedback?.error,
+      languageDic.deleteFeedback?.success,
+      loadBadges,
+    ],
+  );
 
   const confirmListing = async () => {
     const badge = listingDialog.badge;
@@ -1207,12 +1256,14 @@ export default function MyBadgesPage() {
         isLoading={loading}
         isMinting={isMinting || isListingBusy}
         isListingBusy={isListingBusy}
+        isDeleting={isDeleting}
         filters={filterOptions}
         activeFilter={activeFilter}
         onFilterChange={setActiveFilter}
         onList={list}
         onMint={mint}
         onCancel={cancel}
+        onDelete={deleteBadge}
       />
     </div>
   );
