@@ -12,6 +12,11 @@ import {
   type BadgeMarketRecord,
   type MarketPurchaseRecord,
 } from "@src/types/badge";
+import {
+  createMarketPurchase,
+  fetchMarketActivity,
+  fetchMarketListings,
+} from "@src/lib/api/badges";
 import { BADGE_THEME_OPTIONS } from "@src/types/badge-options";
 import { Button } from "@src/components/ui/button";
 import { Input } from "@src/components/ui/input";
@@ -265,10 +270,9 @@ export default function MarketPage() {
           });
           if (search) params.set("search", search);
 
-          const response = await fetch(
-            `/api/badges/market?${params.toString()}`,
-            { signal: controller.signal }
-          );
+          const response = await fetchMarketListings(params, {
+            signal: controller.signal,
+          });
           if (!response.ok) {
             throw new Error("Failed to load market listings");
           }
@@ -301,7 +305,7 @@ export default function MarketPage() {
         });
         if (search) params.set("search", search);
 
-        const response = await fetch(`/api/badges/market?${params.toString()}`);
+        const response = await fetchMarketListings(params);
         if (!response.ok) {
           throw new Error("Failed to load market listings");
         }
@@ -339,10 +343,9 @@ export default function MarketPage() {
             offset: String(nextOffset),
             limit: String(ACTIVITY_PAGE_SIZE),
           });
-          const response = await fetch(
-            `/api/badges/market/activity?${params.toString()}`,
-            { signal: controller.signal }
-          );
+          const response = await fetchMarketActivity(params, {
+            signal: controller.signal,
+          });
           if (!response.ok) {
             throw new Error("Failed to load market activity");
           }
@@ -373,9 +376,7 @@ export default function MarketPage() {
           offset: String(nextOffset),
           limit: String(ACTIVITY_PAGE_SIZE),
         });
-        const response = await fetch(
-          `/api/badges/market/activity?${params.toString()}`
-        );
+        const response = await fetchMarketActivity(params);
         if (!response.ok) {
           throw new Error("Failed to load market activity");
         }
@@ -471,13 +472,9 @@ export default function MarketPage() {
     const purchaseContext = buyContext;
     const syncPurchase = async () => {
       try {
-        const response = await fetch("/api/badges/market/purchase", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            badgeId: purchaseContext.recordId,
-            buyer: purchaseContext.account,
-          }),
+        const response = await createMarketPurchase({
+          badgeId: purchaseContext.recordId,
+          buyer: purchaseContext.account,
         });
         if (!response.ok) {
           throw new Error("Failed to update market purchase");

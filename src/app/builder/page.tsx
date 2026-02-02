@@ -42,6 +42,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@src/components/ui/alert-dialog";
+import { createBadge } from "@src/lib/api/badges";
 
 const PREVIEW_SIZE = 512;
 
@@ -212,11 +213,7 @@ export default function BuilderPage() {
     if (saveStatus === "saving") return;
     setSaveStatus("saving");
     try {
-      const response = await fetch("/api/badges", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(params),
-      });
+      const response = await createBadge(params);
 
       if (!response.ok) {
         throw new Error("Failed to save badge");

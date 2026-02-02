@@ -27,6 +27,13 @@ import {
 import { BadgeRecordStatus, type BadgeConfig } from "@src/types/badge";
 import { BADGE_THEME_OPTIONS } from "@src/types/badge-options";
 import {
+  deleteBadge,
+  fetchBadgesByUser,
+  requestMintSignature,
+  updateBadge,
+  updateBadgeByTokenUri,
+} from "@src/lib/api/badges";
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -135,9 +142,7 @@ export default function MyBadgesPage() {
     }
     setLoading(true);
     try {
-      const response = await fetch(
-        `/api/badges?userId=${encodeURIComponent(address)}`,
-      );
+      const response = await fetchBadgesByUser(address);
       if (!response.ok) {
         throw new Error("Failed to load badges");
       }
@@ -259,15 +264,11 @@ export default function MyBadgesPage() {
       const userId = account ?? address;
       if (badgeId && userId) {
         try {
-          const response = await fetch(`/api/badges/${badgeId}`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              status: BadgeRecordStatus.Minted,
-              userId,
-              listingId: null,
-              price: null,
-            }),
+          const response = await updateBadge(badgeId, {
+            status: BadgeRecordStatus.Minted,
+            userId,
+            listingId: null,
+            price: null,
           });
           if (!response.ok) {
             console.error("Failed to update badge after cancel");
@@ -285,14 +286,10 @@ export default function MyBadgesPage() {
   const finalizeMintFromEvent = useCallback(
     async (tokenId: string, tokenUri: string) => {
       try {
-        const response = await fetch(`/api/badges/by-token-uri`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            status: BadgeRecordStatus.Minted,
-            tokenId,
-            tokenUri,
-          }),
+        const response = await updateBadgeByTokenUri({
+          status: BadgeRecordStatus.Minted,
+          tokenId,
+          tokenUri,
         });
         if (!response.ok) {
           console.error("Failed to update badge status");
@@ -347,15 +344,11 @@ export default function MyBadgesPage() {
       listingId: string;
     }) => {
       try {
-        const response = await fetch(`/api/badges/${badgeId}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            status: BadgeRecordStatus.Listed,
-            userId: account,
-            price,
-            listingId,
-          }),
+        const response = await updateBadge(badgeId, {
+          status: BadgeRecordStatus.Listed,
+          userId: account,
+          price,
+          listingId,
         });
         if (!response.ok) {
           console.error("Failed to update listing status");
@@ -747,15 +740,11 @@ export default function MyBadgesPage() {
       setMintTxHash(undefined);
 
       // get the finger and signature
-      const response = await fetch("/api/mint-signature", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          to: address,
-          // tokenURI: badge.tokenURI,
-          cid: badge.metadataCid,
-          chainId,
-        }),
+      const response = await requestMintSignature({
+        to: address,
+        // tokenURI: badge.tokenURI,
+        cid: badge.metadataCid,
+        chainId,
       });
       if (!response.ok) {
         throw new Error("Failed to get mint signature");
@@ -923,11 +912,7 @@ export default function MyBadgesPage() {
 
       try {
         setIsDeleting(true);
-        const response = await fetch(`/api/badges/${badge.id}`, {
-          method: "DELETE",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userId: address }),
-        });
+        const response = await deleteBadge(badge.id, { userId: address });
 
         if (!response.ok) {
           const payload = await response.json().catch(() => null);

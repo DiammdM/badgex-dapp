@@ -10,6 +10,7 @@ import {
   type BadgeExploreRecord,
   type BadgeExploreStats,
 } from "@src/types/badge";
+import { fetchExploreBadges } from "@src/lib/api/badges";
 import {
   BADGE_CATEGORY_OPTIONS,
   BADGE_ICON_OPTIONS,
@@ -103,10 +104,9 @@ export default function BadgesPage() {
           if (filters.shape) params.set("shape", filters.shape);
           if (filters.icon) params.set("icon", filters.icon);
 
-          const response = await fetch(
-            `/api/badges/explore?${params.toString()}`,
-            { signal: controller.signal }
-          );
+          const response = await fetchExploreBadges(params, {
+            signal: controller.signal,
+          });
           if (!response.ok) {
             throw new Error("Failed to load badges");
           }
@@ -146,9 +146,7 @@ export default function BadgesPage() {
         if (filters.shape) params.set("shape", filters.shape);
         if (filters.icon) params.set("icon", filters.icon);
 
-        const response = await fetch(
-          `/api/badges/explore?${params.toString()}`
-        );
+        const response = await fetchExploreBadges(params);
         if (!response.ok) {
           throw new Error("Failed to load badges");
         }

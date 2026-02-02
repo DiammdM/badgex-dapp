@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { useLanguage } from "@src/components/LanguageProvider";
 import { badgeDetailContent } from "../../i18n";
+import { fetchBadgeByTokenId } from "@src/lib/api/badges";
 import {
   BadgePropertyNames,
   BadgeRecordStatus,
@@ -69,10 +70,9 @@ export default function BadgeDetailPage() {
       setLoading(true);
       setError(null);
       try {
-        const response = await fetch(
-          `/api/badges/by-token-id?tokenId=${encodeURIComponent(tokenId)}`,
-          { signal: controller.signal }
-        );
+        const response = await fetchBadgeByTokenId(tokenId, {
+          signal: controller.signal,
+        });
         if (response.status === 404) {
           setBadge(null);
           setError("not-found");
