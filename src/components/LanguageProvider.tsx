@@ -1,9 +1,8 @@
 "use client";
 
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { defaultLanguage, getLanguage, type Language } from "@src/app/i18n";
-
-const STORAGE_KEY = "badgex-language";
+import { defaultLanguage, type Language } from "@src/app/i18n";
+import { LANGUAGE_STORAGE_KEY } from "@src/lib/preferences";
 
 type LanguageContextValue = {
   language: Language;
@@ -13,27 +12,19 @@ type LanguageContextValue = {
 
 const LanguageContext = createContext<LanguageContextValue | null>(null);
 
-export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [language, setLanguageState] = useState<Language>(defaultLanguage);
-  const [hydrated, setHydrated] = useState(false);
+export function LanguageProvider({
+  children,
+  initialLanguage = defaultLanguage,
+}: {
+  children: React.ReactNode;
+  initialLanguage?: Language;
+}) {
+  const [language, setLanguageState] = useState<Language>(initialLanguage);
 
   useEffect(() => {
-    const stored = window.localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      const next = getLanguage(stored);
-      setLanguageState(next);
-      document.documentElement.lang = next;
-    } else {
-      document.documentElement.lang = language;
-    }
-    setHydrated(true);
-  }, []);
-
-  useEffect(() => {
-    if (!hydrated) return;
-    window.localStorage.setItem(STORAGE_KEY, language);
+    document.cookie = `${LANGUAGE_STORAGE_KEY}=${language}; Path=/; Max-Age=31536000; SameSite=Lax`;
     document.documentElement.lang = language;
-  }, [hydrated, language]);
+  }, [language]);
 
   const value = useMemo(
     () => ({

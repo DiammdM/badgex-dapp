@@ -160,8 +160,7 @@ export const homeContent = {
         },
         {
           title: "Royalty enforcement",
-          description:
-            "Built-in marketplace checks keep creator fees intact.",
+          description: "Built-in marketplace checks keep creator fees intact.",
         },
         {
           title: "Team controls",
@@ -375,7 +374,7 @@ export const builderContent = {
       "Pick theme, shape, and text with a live 512x512 preview. Save to IPFS and generate metadata in one click.",
     statusLocal: "Local Only",
     reset: "Reset",
-    saveToIpfs: "Save to IPFS",
+    saveToIpfs: "Save",
     saveSaving: "Saving...",
     saveStatus: {
       saving: "Uploading badge image to IPFS...",
@@ -426,7 +425,7 @@ export const builderContent = {
       "选择主题、形状与文本，实时预览 512x512 效果。保存到 IPFS 并一键生成 metadata。",
     statusLocal: "仅本地",
     reset: "重置",
-    saveToIpfs: "保存到 IPFS",
+    saveToIpfs: "保存",
     saveSaving: "保存中...",
     saveStatus: {
       saving: "正在上传徽章图片到 IPFS...",

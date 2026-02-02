@@ -9,23 +9,19 @@ import { useLanguage } from "@src/components/LanguageProvider";
 import { layoutCopy } from "../app/i18n";
 import LanguageSwitch from "./LanguageSwitch";
 import ConnectWalletButton from "@src/components/ConnectWalletButton";
+import { THEME_STORAGE_KEY, type ThemeMode } from "@src/lib/preferences";
 
 export default function LayoutShell({
   children,
+  initialThemeMode = "auto",
 }: {
   children: React.ReactNode;
+  initialThemeMode?: ThemeMode;
 }) {
-  const THEME_STORAGE_KEY = "badgex-theme";
-  type ThemeMode = "light" | "dark" | "auto";
   const { language } = useLanguage();
   const copy = layoutCopy[language];
-  const [themeMode, setThemeMode] = useState<ThemeMode>("auto");
+  const [themeMode, setThemeMode] = useState<ThemeMode>(initialThemeMode);
   const pathname = usePathname();
-
-  useEffect(() => {
-    const stored = localStorage.getItem(THEME_STORAGE_KEY) as ThemeMode | null;
-    setThemeMode(stored ?? "auto");
-  }, []);
 
   useEffect(() => {
     const media = window.matchMedia("(prefers-color-scheme: dark)");
@@ -67,6 +63,11 @@ export default function LayoutShell({
     if (pathname.startsWith("/market")) return copy.nav.market;
     return copy.location.home;
   }, [pathname, copy]);
+
+  const setTheme = (next: ThemeMode) => {
+    document.cookie = `${THEME_STORAGE_KEY}=${next}; Path=/; Max-Age=31536000; SameSite=Lax`;
+    setThemeMode(next);
+  };
 
   return (
     <>
@@ -155,8 +156,7 @@ export default function LayoutShell({
                 className={themeButtonClass}
                 data-active={themeMode === "light"}
                 onClick={() => {
-                  localStorage.setItem(THEME_STORAGE_KEY, "light");
-                  setThemeMode("light");
+                  setTheme("light");
                 }}
                 type="button"
               >
@@ -168,8 +168,7 @@ export default function LayoutShell({
                 className={themeButtonClass}
                 data-active={themeMode === "dark"}
                 onClick={() => {
-                  localStorage.setItem(THEME_STORAGE_KEY, "dark");
-                  setThemeMode("dark");
+                  setTheme("dark");
                 }}
                 type="button"
               >
@@ -181,8 +180,7 @@ export default function LayoutShell({
                 className={themeButtonClass}
                 data-active={themeMode === "auto"}
                 onClick={() => {
-                  localStorage.setItem(THEME_STORAGE_KEY, "auto");
-                  setThemeMode("auto");
+                  setTheme("auto");
                 }}
                 type="button"
               >
