@@ -22,6 +22,7 @@ enum BadgeStatus {
 
 model BadgeRecord {
   id          String      @id @default(auto()) @map("_id") @db.ObjectId
+  chainId     Int
   userId      String
   name        String
   description String?
@@ -40,6 +41,7 @@ model BadgeRecord {
 
 model PurchaseRecord {
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  chainId     Int
   tokenId     String
   buyer       String
   seller      String

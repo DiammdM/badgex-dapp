@@ -27,7 +27,7 @@ import {
 import { BadgeRecordStatus, type BadgeConfig } from "@src/types/badge";
 import { BADGE_THEME_OPTIONS } from "@src/types/badge-options";
 import {
-  deleteBadge,
+  deleteBadge as deleteBadgeApi,
   fetchBadgesByUser,
   requestMintSignature,
   updateBadge,
@@ -133,7 +133,7 @@ export default function MyBadgesPage() {
   const loadBadges = useCallback(async () => {
     const wasManualRefresh = manualRefreshRef.current;
     manualRefreshRef.current = false;
-    if (!address) {
+    if (!address || !chainId) {
       setBadges([]);
       if (wasManualRefresh) {
         toast.error(languageDic.refreshFeedback?.error ?? "Refresh failed");
@@ -142,7 +142,7 @@ export default function MyBadgesPage() {
     }
     setLoading(true);
     try {
-      const response = await fetchBadgesByUser(address);
+      const response = await fetchBadgesByUser(address, chainId);
       if (!response.ok) {
         throw new Error("Failed to load badges");
       }
@@ -162,6 +162,7 @@ export default function MyBadgesPage() {
     }
   }, [
     address,
+    chainId,
     languageDic.refreshFeedback?.error,
     languageDic.refreshFeedback?.success,
   ]);
@@ -262,13 +263,14 @@ export default function MyBadgesPage() {
       account?: `0x${string}`;
     }) => {
       const userId = account ?? address;
-      if (badgeId && userId) {
+      if (badgeId && userId && chainId) {
         try {
           const response = await updateBadge(badgeId, {
             status: BadgeRecordStatus.Minted,
             userId,
             listingId: null,
             price: null,
+            chainId,
           });
           if (!response.ok) {
             console.error("Failed to update badge after cancel");
@@ -280,16 +282,20 @@ export default function MyBadgesPage() {
 
       void loadBadges();
     },
-    [address, loadBadges],
+    [address, chainId, loadBadges],
   );
 
   const finalizeMintFromEvent = useCallback(
     async (tokenId: string, tokenUri: string) => {
+      if (!chainId) {
+        return;
+      }
       try {
         const response = await updateBadgeByTokenUri({
           status: BadgeRecordStatus.Minted,
           tokenId,
           tokenUri,
+          chainId,
         });
         if (!response.ok) {
           console.error("Failed to update badge status");
@@ -306,7 +312,7 @@ export default function MyBadgesPage() {
       setMintTxHash(undefined);
       void loadBadges();
     },
-    [languageDic.mintFeedback.success, clearMintContext, loadBadges],
+    [chainId, languageDic.mintFeedback.success, clearMintContext, loadBadges],
   );
 
   const openListingDialog = useCallback((badge: BadgeListItem) => {
@@ -343,12 +349,16 @@ export default function MyBadgesPage() {
       price: string;
       listingId: string;
     }) => {
+      if (!chainId) {
+        return;
+      }
       try {
         const response = await updateBadge(badgeId, {
           status: BadgeRecordStatus.Listed,
           userId: account,
           price,
           listingId,
+          chainId,
         });
         if (!response.ok) {
           console.error("Failed to update listing status");
@@ -361,7 +371,7 @@ export default function MyBadgesPage() {
       setListingTxHash(undefined);
       void loadBadges();
     },
-    [loadBadges],
+    [chainId, loadBadges],
   );
 
   useEffect(() => {
@@ -903,7 +913,7 @@ export default function MyBadgesPage() {
 
   const deleteBadge = useCallback(
     async (badge: BadgeListItem) => {
-      if (!address) {
+      if (!address || !chainId) {
         toast.error(
           languageDic.deleteFeedback?.error ?? "Failed to delete badge",
         );
@@ -912,7 +922,10 @@ export default function MyBadgesPage() {
 
       try {
         setIsDeleting(true);
-        const response = await deleteBadge(badge.id, { userId: address });
+        const response = await deleteBadgeApi(badge.id, {
+          userId: address,
+          chainId,
+        });
 
         if (!response.ok) {
           const payload = await response.json().catch(() => null);
@@ -939,6 +952,7 @@ export default function MyBadgesPage() {
     },
     [
       address,
+      chainId,
       languageDic.deleteFeedback?.error,
       languageDic.deleteFeedback?.success,
       loadBadges,

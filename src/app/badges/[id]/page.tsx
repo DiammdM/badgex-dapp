@@ -25,6 +25,7 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from "@src/components/ui/hover-card";
+import { useConnection } from "wagmi";
 
 type BadgeAttribute = {
   label: string;
@@ -62,15 +63,22 @@ export default function BadgeDetailPage() {
   const [badge, setBadge] = useState<BadgeDetailRecord | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<"not-found" | "error" | null>(null);
+  const { chainId } = useConnection();
 
   useEffect(() => {
     if (!tokenId) return;
+    if (!chainId) {
+      setBadge(null);
+      setError("error");
+      setLoading(false);
+      return;
+    }
     const controller = new AbortController();
     const loadBadge = async () => {
       setLoading(true);
       setError(null);
       try {
-        const response = await fetchBadgeByTokenId(tokenId, {
+        const response = await fetchBadgeByTokenId(tokenId, chainId, {
           signal: controller.signal,
         });
         if (response.status === 404) {
@@ -95,7 +103,7 @@ export default function BadgeDetailPage() {
     };
     void loadBadge();
     return () => controller.abort();
-  }, [tokenId]);
+  }, [chainId, tokenId]);
 
   const config = useMemo(() => {
     if (badge?.config && typeof badge.config === "object") {

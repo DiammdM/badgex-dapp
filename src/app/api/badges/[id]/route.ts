@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { deleteBadgeForUser, updateBadgeStatusForUser } from "@src/server/badges";
 import { BadgeRecordStatus } from "@src/types/badge";
-import { parseJson } from "@src/utils/request";
+import { parseChainId, parseJson } from "@src/utils/request";
 
 export const runtime = "nodejs";
 
@@ -11,6 +11,7 @@ type UpdateBadgePayload = {
   userId?: `0x${string}`;
   price?: string | null;
   listingId?: string | null;
+  chainId?: number;
 };
 
 export async function PATCH(
@@ -22,6 +23,7 @@ export async function PATCH(
     const body = await parseJson<UpdateBadgePayload>(request);
     const status = body.status;
     const userId = body.userId;
+    const chainId = parseChainId(body.chainId);
     const tokenId =
       typeof body.tokenId === "string" ? body.tokenId.trim() : undefined;
     const price =
@@ -37,8 +39,11 @@ export async function PATCH(
         ? null
         : undefined;
 
-    if (!userId) {
-      return NextResponse.json({ error: "Missing userId" }, { status: 400 });
+    if (!userId || !chainId) {
+      return NextResponse.json(
+        { error: "Missing userId or chainId" },
+        { status: 400 }
+      );
     }
 
     if (
@@ -67,6 +72,7 @@ export async function PATCH(
     const result = await updateBadgeStatusForUser({
       userId,
       badgeId: id,
+      chainId,
       status,
       tokenId,
       price,
@@ -96,14 +102,20 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const body = await parseJson<{ userId?: `0x${string}` }>(request);
+    const body = await parseJson<{ userId?: `0x${string}`; chainId?: number }>(
+      request
+    );
     const userId = body.userId;
+    const chainId = parseChainId(body.chainId);
 
-    if (!userId) {
-      return NextResponse.json({ error: "Missing userId" }, { status: 400 });
+    if (!userId || !chainId) {
+      return NextResponse.json(
+        { error: "Missing userId or chainId" },
+        { status: 400 }
+      );
     }
 
-    const result = await deleteBadgeForUser({ userId, badgeId: id });
+    const result = await deleteBadgeForUser({ userId, badgeId: id, chainId });
     if (result.count === 0) {
       return NextResponse.json({ error: "Badge not found" }, { status: 404 });
     }

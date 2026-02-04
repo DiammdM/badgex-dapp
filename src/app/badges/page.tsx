@@ -19,6 +19,7 @@ import {
 } from "@src/types/badge-options";
 import { ExploreBadgeCard, type ExploreBadge } from "./ExploreBadgeCard";
 import { Button } from "@src/components/ui/button";
+import { useConnection } from "wagmi";
 
 type ExploreFilters = {
   search?: string;
@@ -56,6 +57,7 @@ export default function BadgesPage() {
   const [stats, setStats] = useState<BadgeExploreStats | null>(null);
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
   const requestAbortRef = useRef<AbortController | null>(null);
+  const { chainId } = useConnection();
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
@@ -83,6 +85,17 @@ export default function BadgesPage() {
 
   const loadBadges = useCallback(
     async (nextOffset: number, initial: boolean, filters: ExploreFilters) => {
+      if (!chainId) {
+        if (initial) {
+          setLoading(false);
+          setHasError(true);
+          setHasMore(false);
+          setOffset(0);
+          setBadges([]);
+          setStats(null);
+        }
+        return;
+      }
       if (initial) {
         requestAbortRef.current?.abort();
         const controller = new AbortController();
@@ -104,7 +117,7 @@ export default function BadgesPage() {
           if (filters.shape) params.set("shape", filters.shape);
           if (filters.icon) params.set("icon", filters.icon);
 
-          const response = await fetchExploreBadges(params, {
+          const response = await fetchExploreBadges(params, chainId, {
             signal: controller.signal,
           });
           if (!response.ok) {
@@ -146,7 +159,7 @@ export default function BadgesPage() {
         if (filters.shape) params.set("shape", filters.shape);
         if (filters.icon) params.set("icon", filters.icon);
 
-        const response = await fetchExploreBadges(params);
+        const response = await fetchExploreBadges(params, chainId);
         if (!response.ok) {
           throw new Error("Failed to load badges");
         }
@@ -168,7 +181,7 @@ export default function BadgesPage() {
         setIsLoadingMore(false);
       }
     },
-    []
+    [chainId]
   );
 
   const loadMore = useCallback(() => {

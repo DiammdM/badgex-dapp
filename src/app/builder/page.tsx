@@ -192,12 +192,12 @@ export default function BuilderPage() {
 
   const metadataJson = JSON.stringify(metadataPreview, null, 2);
 
-  const { isConnected, address } = useConnection();
+  const { isConnected, address, chainId } = useConnection();
   const [showConnectAlert, setShowConnectAlert] = useState(false);
 
   const handleSave = async () => {
     // check the login status
-    if (!isConnected || !address) {
+    if (!isConnected || !address || !chainId) {
       setShowConnectAlert(true);
       return;
     }
@@ -205,6 +205,7 @@ export default function BuilderPage() {
     // generate params
     const params: BadgeApiPayload = {
       userId: address,
+      chainId,
       name: displayName,
       description: displayDescription,
       config: badgeConfig,

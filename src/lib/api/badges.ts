@@ -7,6 +7,7 @@ type ApiOptions = {
 type MarketPurchasePayload = {
   badgeId: string;
   buyer: string;
+  chainId: number;
 };
 
 type BadgePatchPayload = {
@@ -14,12 +15,14 @@ type BadgePatchPayload = {
   userId?: string;
   listingId?: string | null;
   price?: string | null;
+  chainId: number;
 };
 
 type BadgeTokenUriPatchPayload = {
   status: BadgeRecordStatus;
   tokenId: string;
   tokenUri: string;
+  chainId: number;
 };
 
 type MintSignaturePayload = {
@@ -54,23 +57,43 @@ const withJsonDelete = (body: unknown, options?: ApiOptions): RequestInit => ({
   signal: options?.signal,
 });
 
-export const fetchBadgeByTokenId = (tokenId: string, options?: ApiOptions) =>
+const withChainId = (params: URLSearchParams, chainId: number) => {
+  const next = new URLSearchParams(params);
+  next.set("chainId", String(chainId));
+  return next;
+};
+
+export const fetchBadgeByTokenId = (
+  tokenId: string,
+  chainId: number,
+  options?: ApiOptions
+) =>
   fetch(
-    `/api/badges/by-token-id?tokenId=${encodeURIComponent(tokenId)}`,
+    `/api/badges/by-token-id?tokenId=${encodeURIComponent(
+      tokenId
+    )}&chainId=${encodeURIComponent(String(chainId))}`,
     withSignal(options)
   );
 
 export const fetchMarketListings = (
   params: URLSearchParams,
+  chainId: number,
   options?: ApiOptions
 ) =>
-  fetch(`/api/badges/market?${params.toString()}`, withSignal(options));
+  fetch(
+    `/api/badges/market?${withChainId(params, chainId).toString()}`,
+    withSignal(options)
+  );
 
 export const fetchMarketActivity = (
   params: URLSearchParams,
+  chainId: number,
   options?: ApiOptions
 ) =>
-  fetch(`/api/badges/market/activity?${params.toString()}`, withSignal(options));
+  fetch(
+    `/api/badges/market/activity?${withChainId(params, chainId).toString()}`,
+    withSignal(options)
+  );
 
 export const createMarketPurchase = (
   payload: MarketPurchasePayload,
@@ -82,15 +105,25 @@ export const createBadge = (payload: BadgeApiPayload, options?: ApiOptions) =>
 
 export const fetchExploreBadges = (
   params: URLSearchParams,
+  chainId: number,
   options?: ApiOptions
 ) =>
-  fetch(`/api/badges/explore?${params.toString()}`, withSignal(options));
-
-export const fetchBadgesByUser = (userId: string, options?: ApiOptions) =>
   fetch(
-    `/api/badges?userId=${encodeURIComponent(userId)}`,
+    `/api/badges/explore?${withChainId(params, chainId).toString()}`,
     withSignal(options)
   );
+
+export const fetchBadgesByUser = (
+  userId: string,
+  chainId: number,
+  options?: ApiOptions
+) => {
+  const params = new URLSearchParams({
+    userId,
+    chainId: String(chainId),
+  });
+  return fetch(`/api/badges?${params.toString()}`, withSignal(options));
+};
 
 export const updateBadge = (
   badgeId: string,
@@ -110,6 +143,6 @@ export const requestMintSignature = (
 
 export const deleteBadge = (
   badgeId: string,
-  payload: { userId: string },
+  payload: { userId: string; chainId: number },
   options?: ApiOptions
 ) => fetch(`/api/badges/${badgeId}`, withJsonDelete(payload, options));

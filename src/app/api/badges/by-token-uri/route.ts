@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { updateBadgeStatusByTokenUri } from "@src/server/badges";
 import { BadgeRecordStatus } from "@src/types/badge";
-import { parseJson } from "@src/utils/request";
+import { parseChainId, parseJson } from "@src/utils/request";
 
 export const runtime = "nodejs";
 
@@ -10,19 +10,24 @@ type UpdateByTokenUriPayload = {
   tokenId?: string;
   userId?: `0x${string}`;
   tokenUri?: string;
+  chainId?: number;
 };
 
 export async function PATCH(request: Request) {
   try {
     const body = await parseJson<UpdateByTokenUriPayload>(request);
     const status = body.status;
+    const chainId = parseChainId(body.chainId);
     const tokenUri =
       typeof body.tokenUri === "string" ? body.tokenUri.trim() : undefined;
     const tokenId =
       typeof body.tokenId === "string" ? body.tokenId.trim() : undefined;
 
-    if (!tokenUri) {
-      return NextResponse.json({ error: "Missing tokenUri" }, { status: 400 });
+    if (!tokenUri || !chainId) {
+      return NextResponse.json(
+        { error: "Missing tokenUri or chainId" },
+        { status: 400 }
+      );
     }
 
     if (!status || status !== BadgeRecordStatus.Minted) {
@@ -35,6 +40,7 @@ export async function PATCH(request: Request) {
 
     const result = await updateBadgeStatusByTokenUri({
       tokenUri,
+      chainId,
       status,
       tokenId,
     });

@@ -24,6 +24,7 @@ export type BadgeConfig = {
 
 export type BadgeApiPayload = {
   userId: `0x${string}` | undefined;
+  chainId: number;
   name: string;
   description: string;
   config: BadgeConfig;
@@ -47,6 +48,7 @@ export type BadgeListItem = {
 
 export type CreateBadgeInput = {
   userId: `0x${string}` | undefined;
+  chainId: number;
   name: string;
   description?: string;
   config: BadgeConfig;

@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
 import { finalizeMarketPurchase } from "@src/server/badges";
-import { parseJson } from "@src/utils/request";
+import { parseChainId, parseJson } from "@src/utils/request";
 
 export const runtime = "nodejs";
 
 type MarketPurchasePayload = {
   badgeId?: string;
   buyer?: `0x${string}`;
+  chainId?: number;
 };
 
 export async function POST(request: Request) {
@@ -15,12 +16,13 @@ export async function POST(request: Request) {
     const badgeId =
       typeof body.badgeId === "string" ? body.badgeId.trim() : "";
     const buyer = typeof body.buyer === "string" ? body.buyer.trim() : "";
+    const chainId = parseChainId(body.chainId);
 
-    if (!badgeId || !buyer) {
+    if (!badgeId || !buyer || !chainId) {
       return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
     }
 
-    const result = await finalizeMarketPurchase({ badgeId, buyer });
+    const result = await finalizeMarketPurchase({ badgeId, buyer, chainId });
 
     if (!result.ok) {
       return NextResponse.json({ error: "Badge not found" }, { status: 404 });

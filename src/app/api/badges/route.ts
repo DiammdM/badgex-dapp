@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createBadgeForUser, listBadgesForUser } from "@src/server/badges";
 import { BadgeApiPayload } from "@src/types/badge";
-import { parseJson } from "@src/utils/request";
+import { parseChainId, parseJson } from "@src/utils/request";
 
 export const runtime = "nodejs";
 
@@ -9,12 +9,16 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get("userId");
+    const chainId = parseChainId(searchParams.get("chainId"));
 
-    if (!userId) {
-      return NextResponse.json({ error: "Missing userId" }, { status: 400 });
+    if (!userId || !chainId) {
+      return NextResponse.json(
+        { error: "Missing userId or chainId" },
+        { status: 400 }
+      );
     }
 
-    const badges = await listBadgesForUser(userId);
+    const badges = await listBadgesForUser(userId, chainId);
     return NextResponse.json({ badges });
   } catch (error) {
     console.error("Failed to load badges", error);
@@ -32,13 +36,18 @@ export async function POST(request: Request) {
     const description = body.description.trim();
     const config = body.config;
     const userId = body.userId;
+    const chainId = parseChainId(body.chainId);
 
-    if (!name || !config || typeof config !== "object") {
-      return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
+    if (!name || !config || typeof config !== "object" || !chainId) {
+      return NextResponse.json(
+        { error: "Invalid payload" },
+        { status: 400 }
+      );
     }
 
     const result = await createBadgeForUser({
       userId,
+      chainId,
       name,
       description,
       config: config,

@@ -65,11 +65,13 @@ const matchesConfigFilters = (
 };
 
 export const listBadgesForUser = async (
-  userId: string
+  userId: string,
+  chainId: number
 ): Promise<BadgeListItem[]> => {
   const records = await prisma.badgeRecord.findMany({
     where: {
       userId,
+      chainId,
     },
     orderBy: {
       updatedAt: "desc",
@@ -105,12 +107,14 @@ export const listBadgesForUser = async (
 };
 
 const buildExploreStats = async ({
+  chainId,
   search,
   category,
   theme,
   shape,
   icon,
 }: {
+  chainId: number;
   search?: string;
   category?: string;
   theme?: string;
@@ -118,6 +122,7 @@ const buildExploreStats = async ({
   icon?: string;
 }): Promise<BadgeExploreStats> => {
   const where = {
+    chainId,
     status: {
       in: [BadgeRecordStatus.Minted, BadgeRecordStatus.Listed],
     },
@@ -177,6 +182,7 @@ const buildExploreStats = async ({
 };
 
 export const listExploreBadges = async ({
+  chainId,
   limit,
   offset,
   search,
@@ -185,6 +191,7 @@ export const listExploreBadges = async ({
   shape,
   icon,
 }: {
+  chainId: number;
   limit: number;
   offset: number;
   search?: string;
@@ -199,6 +206,7 @@ export const listExploreBadges = async ({
   stats: BadgeExploreStats;
 }> => {
   const where = {
+    chainId,
     status: {
       in: [BadgeRecordStatus.Minted, BadgeRecordStatus.Listed],
     },
@@ -216,6 +224,7 @@ export const listExploreBadges = async ({
 
   const prefix = normalizeIpfsPrefix(IPFS_PIC_PREFIX);
   const stats = await buildExploreStats({
+    chainId,
     search,
     category,
     theme,
@@ -304,10 +313,12 @@ export const listExploreBadges = async ({
 };
 
 export const listMarketBadges = async ({
+  chainId,
   limit,
   offset,
   search,
 }: {
+  chainId: number;
   limit: number;
   offset: number;
   search?: string;
@@ -318,6 +329,7 @@ export const listMarketBadges = async ({
 }> => {
   const tokenSearch = search ? normalizeTokenId(search) : "";
   const where = {
+    chainId,
     status: BadgeRecordStatus.Listed,
     AND: search
       ? [
@@ -381,9 +393,11 @@ export const listMarketBadges = async ({
 };
 
 export const listMarketPurchases = async ({
+  chainId,
   limit,
   offset,
 }: {
+  chainId: number;
   limit: number;
   offset: number;
 }): Promise<{
@@ -392,6 +406,9 @@ export const listMarketPurchases = async ({
   nextOffset: number;
 }> => {
   const records = await prisma.purchaseRecord.findMany({
+    where: {
+      chainId,
+    },
     orderBy: {
       purchasedAt: "desc",
     },
@@ -431,6 +448,7 @@ export const listMarketPurchases = async ({
   if (tokenLookup.size > 0) {
     const badges = await prisma.badgeRecord.findMany({
       where: {
+        chainId,
         tokenId: { in: Array.from(tokenLookup) },
       },
       select: {
@@ -478,13 +496,15 @@ export const listMarketPurchases = async ({
 };
 
 export const getExploreBadgeByTokenId = async (
-  tokenId: string
+  tokenId: string,
+  chainId: number
 ): Promise<BadgeDetailRecord | null> => {
   const normalized = normalizeTokenId(tokenId);
   if (!normalized) return null;
 
   const record = await prisma.badgeRecord.findFirst({
     where: {
+      chainId,
       status: {
         in: [BadgeRecordStatus.Minted, BadgeRecordStatus.Listed],
       },
@@ -537,6 +557,7 @@ export const getExploreBadgeByTokenId = async (
 
 export const createBadgeForUser = async ({
   userId,
+  chainId,
   name,
   description,
   config,
@@ -550,6 +571,7 @@ export const createBadgeForUser = async ({
   const record = await prisma.badgeRecord.create({
     data: {
       userId: userId as string,
+      chainId,
       name,
       description: description || null,
       config,
@@ -574,6 +596,7 @@ export const createBadgeForUser = async ({
 export const updateBadgeStatusForUser = async ({
   userId,
   badgeId,
+  chainId,
   status,
   tokenId,
   listingId,
@@ -581,6 +604,7 @@ export const updateBadgeStatusForUser = async ({
 }: {
   userId: string;
   badgeId: string;
+  chainId: number;
   status: BadgeRecordStatus;
   tokenId?: string;
   listingId?: string | null;
@@ -605,6 +629,7 @@ export const updateBadgeStatusForUser = async ({
     where: {
       id: badgeId,
       userId,
+      chainId,
     },
     data,
   });
@@ -612,10 +637,12 @@ export const updateBadgeStatusForUser = async ({
 
 export const updateBadgeStatusByTokenUri = async ({
   tokenUri,
+  chainId,
   status,
   tokenId,
 }: {
   tokenUri: string;
+  chainId: number;
   status: BadgeRecordStatus;
   tokenId?: string;
 }) => {
@@ -628,6 +655,7 @@ export const updateBadgeStatusByTokenUri = async ({
   return prisma.badgeRecord.updateMany({
     where: {
       tokenUri,
+      chainId,
     },
     data,
   });
@@ -636,14 +664,17 @@ export const updateBadgeStatusByTokenUri = async ({
 export const deleteBadgeForUser = async ({
   userId,
   badgeId,
+  chainId,
 }: {
   userId: string;
   badgeId: string;
+  chainId: number;
 }) => {
   return prisma.badgeRecord.deleteMany({
     where: {
       id: badgeId,
       userId,
+      chainId,
       status: {
         in: [BadgeRecordStatus.Saved, BadgeRecordStatus.Draft],
       },
@@ -654,13 +685,16 @@ export const deleteBadgeForUser = async ({
 export const finalizeMarketPurchase = async ({
   badgeId,
   buyer,
+  chainId,
 }: {
   badgeId: string;
   buyer: string;
+  chainId: number;
 }) => {
   const record = await prisma.badgeRecord.findFirst({
     where: {
       id: badgeId,
+      chainId,
       status: BadgeRecordStatus.Listed,
     },
     select: {
@@ -678,6 +712,7 @@ export const finalizeMarketPurchase = async ({
   const updated = await prisma.badgeRecord.updateMany({
     where: {
       id: badgeId,
+      chainId,
       status: BadgeRecordStatus.Listed,
     },
     data: {
@@ -694,6 +729,7 @@ export const finalizeMarketPurchase = async ({
 
   await prisma.purchaseRecord.create({
     data: {
+      chainId,
       tokenId: record.tokenId as string,
       buyer,
       seller: record.userId,

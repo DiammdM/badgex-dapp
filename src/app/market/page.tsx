@@ -254,6 +254,16 @@ export default function MarketPage() {
 
   const loadListings = useCallback(
     async (nextOffset: number, initial: boolean, search: string) => {
+      if (!chainId) {
+        if (initial) {
+          setLoading(false);
+          setHasError(true);
+          setHasMore(false);
+          setListings([]);
+          setOffset(0);
+        }
+        return;
+      }
       if (initial) {
         requestAbortRef.current?.abort();
         const controller = new AbortController();
@@ -270,7 +280,7 @@ export default function MarketPage() {
           });
           if (search) params.set("search", search);
 
-          const response = await fetchMarketListings(params, {
+          const response = await fetchMarketListings(params, chainId, {
             signal: controller.signal,
           });
           if (!response.ok) {
@@ -305,7 +315,7 @@ export default function MarketPage() {
         });
         if (search) params.set("search", search);
 
-        const response = await fetchMarketListings(params);
+        const response = await fetchMarketListings(params, chainId);
         if (!response.ok) {
           throw new Error("Failed to load market listings");
         }
@@ -324,11 +334,21 @@ export default function MarketPage() {
         setIsLoadingMore(false);
       }
     },
-    []
+    [chainId]
   );
 
   const loadActivity = useCallback(
     async (nextOffset: number, initial: boolean) => {
+      if (!chainId) {
+        if (initial) {
+          setActivityLoading(false);
+          setActivityHasError(true);
+          setActivityHasMore(false);
+          setActivityRecords([]);
+          setActivityOffset(0);
+        }
+        return;
+      }
       if (initial) {
         activityAbortRef.current?.abort();
         const controller = new AbortController();
@@ -343,7 +363,7 @@ export default function MarketPage() {
             offset: String(nextOffset),
             limit: String(ACTIVITY_PAGE_SIZE),
           });
-          const response = await fetchMarketActivity(params, {
+          const response = await fetchMarketActivity(params, chainId, {
             signal: controller.signal,
           });
           if (!response.ok) {
@@ -376,7 +396,7 @@ export default function MarketPage() {
           offset: String(nextOffset),
           limit: String(ACTIVITY_PAGE_SIZE),
         });
-        const response = await fetchMarketActivity(params);
+        const response = await fetchMarketActivity(params, chainId);
         if (!response.ok) {
           throw new Error("Failed to load market activity");
         }
@@ -395,7 +415,7 @@ export default function MarketPage() {
         setIsActivityLoadingMore(false);
       }
     },
-    []
+    [chainId]
   );
 
   const loadMore = useCallback(() => {
@@ -471,10 +491,12 @@ export default function MarketPage() {
     setBuyFeedback({ type: "success", message: languageDic.buySuccess });
     const purchaseContext = buyContext;
     const syncPurchase = async () => {
+      if (!chainId) return;
       try {
         const response = await createMarketPurchase({
           badgeId: purchaseContext.recordId,
           buyer: purchaseContext.account,
+          chainId,
         });
         if (!response.ok) {
           throw new Error("Failed to update market purchase");
@@ -499,6 +521,7 @@ export default function MarketPage() {
     buyContext,
     buyReceipt,
     buyTxHash,
+    chainId,
     languageDic.buyError,
     languageDic.buySuccess,
     loadActivity,
@@ -900,21 +923,27 @@ export default function MarketPage() {
                     {languageDic.emptyText}
                   </div>
                 ) : (
-                  displayListings.map((listing) => (
-                    <MarketListingCard
-                      copy={languageDic}
-                      isBuying={buyingId === listing.id}
-                      isBuyDisabled={
-                        isBuyingBusy ||
-                        !listing.listingId ||
-                        !parseListingId(listing.listingId) ||
-                        !listing.rawPrice
-                      }
-                      key={listing.id}
-                      listing={listing}
-                      onBuyNow={buyNow}
-                    />
-                  ))
+                  displayListings.map((listing) => {
+                    const isSelfListing =
+                      !!address &&
+                      listing.owner.toLowerCase() === address.toLowerCase();
+                    return (
+                      <MarketListingCard
+                        copy={languageDic}
+                        isBuying={buyingId === listing.id}
+                        isBuyDisabled={
+                          isBuyingBusy ||
+                          isSelfListing ||
+                          !listing.listingId ||
+                          !parseListingId(listing.listingId) ||
+                          !listing.rawPrice
+                        }
+                        key={listing.id}
+                        listing={listing}
+                        onBuyNow={buyNow}
+                      />
+                    );
+                  })
                 )}
               </div>
               {!loading && !hasError && displayListings.length > 0 ? (

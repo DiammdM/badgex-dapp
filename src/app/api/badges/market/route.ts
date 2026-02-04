@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { listMarketBadges } from "@src/server/badges";
+import { parseChainId } from "@src/utils/request";
 
 export const runtime = "nodejs";
 
@@ -11,6 +12,7 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const limitParam = Number.parseInt(searchParams.get("limit") ?? "", 10);
     const offsetParam = Number.parseInt(searchParams.get("offset") ?? "", 10);
+    const chainId = parseChainId(searchParams.get("chainId"));
     const search = searchParams.get("search")?.trim();
     const limit = Number.isFinite(limitParam)
       ? Math.min(Math.max(limitParam, 1), MAX_LIMIT)
@@ -18,7 +20,15 @@ export async function GET(request: Request) {
     const offset =
       Number.isFinite(offsetParam) && offsetParam >= 0 ? offsetParam : 0;
 
+    if (!chainId) {
+      return NextResponse.json(
+        { error: "Missing chainId" },
+        { status: 400 }
+      );
+    }
+
     const result = await listMarketBadges({
+      chainId,
       limit,
       offset,
       search: search || undefined,
