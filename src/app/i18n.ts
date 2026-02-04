@@ -392,7 +392,7 @@ export const builderContent = {
     border: "Border",
     icon: "Icon",
     text: "Text",
-    textPlaceholder: "Up to 10 characters",
+    textPlaceholder: "Up to 20 characters",
     previewTitle: "Live preview",
     previewPill: "512 x 512 PNG",
     summary: {
@@ -443,7 +443,7 @@ export const builderContent = {
     border: "边框",
     icon: "图标",
     text: "文本",
-    textPlaceholder: "最多 10 个字符",
+    textPlaceholder: "最多 20 个字符",
     previewTitle: "实时预览",
     previewPill: "512 x 512 PNG",
     summary: {
@@ -748,7 +748,7 @@ export const myBadgesContent = {
     },
     actions: {
       save: "Save to IPFS",
-      mint: "Mint now",
+      mint: "Mint",
       list: "List for sale",
       cancel: "Cancel listing",
       view: "View details",

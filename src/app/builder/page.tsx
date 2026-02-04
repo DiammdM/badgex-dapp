@@ -1,17 +1,18 @@
 "use client";
 
-import Link from "next/link";
 import { useMemo, useState } from "react";
 import {
   ChevronDown,
   Flame,
   Leaf,
+  Loader2,
   Star,
   Sun,
   Zap,
   type LucideIcon,
 } from "lucide-react";
 import { useLanguage } from "@src/components/LanguageProvider";
+import { toast } from "sonner";
 import {
   BADGE_BORDER_OPTIONS,
   BADGE_CATEGORY_OPTIONS,
@@ -75,10 +76,37 @@ const buildHexagonPoints = (cx: number, cy: number, radius: number) => {
 const buildShieldPath = () =>
   "M256 58 L428 122 V252 C428 354 354 430 256 468 C158 430 84 354 84 252 V122 Z";
 
-const getTextSize = (text: string) => {
-  const length = text.length;
-  if (length > 8) return 32;
-  if (length > 5) return 40;
+const MAX_BADGE_TEXT_LENGTH = 20;
+const WRAP_TEXT_AT = 10;
+
+const splitBadgeText = (text: string) => {
+  const normalized = text.trim().replace(/\s+/g, " ");
+  if (!normalized) return [];
+  const limited = normalized.slice(0, MAX_BADGE_TEXT_LENGTH);
+
+  if (/\s/.test(limited)) {
+    const words = limited.split(" ").filter(Boolean);
+    if (words.length >= 2) {
+      const splitIndex =
+        words.length === 2 ? 1 : words.length === 3 ? 2 : Math.ceil(words.length / 2);
+      const lineOne = words.slice(0, splitIndex).join(" ");
+      const lineTwo = words.slice(splitIndex).join(" ");
+      if (lineTwo) return [lineOne, lineTwo];
+    }
+  }
+
+  if (limited.length <= WRAP_TEXT_AT) return [limited];
+  return [limited.slice(0, WRAP_TEXT_AT), limited.slice(WRAP_TEXT_AT)];
+};
+
+const getTextSize = (maxLineLength: number, lineCount: number) => {
+  if (lineCount > 1) {
+    if (maxLineLength > 8) return 28;
+    if (maxLineLength > 5) return 32;
+    return 36;
+  }
+  if (maxLineLength > 8) return 32;
+  if (maxLineLength > 5) return 40;
   return 48;
 };
 
@@ -150,15 +178,24 @@ export default function BuilderPage() {
   const selectedCategoryEnglish =
     selectedCategory?.englishLabel ?? categoryOptions[0].englishLabel;
   const selectedShapeLabel = selectedShape?.label ?? shapeOptions[0].label;
-  const displayText = badgeText.trim().slice(0, 10) || languageDic.previewText;
+  const trimmedText = badgeText.trim();
+  const limitedText = trimmedText.slice(0, MAX_BADGE_TEXT_LENGTH);
+  const textLines = limitedText
+    ? splitBadgeText(limitedText)
+    : [languageDic.previewText];
+  const displayText = limitedText || languageDic.previewText;
   const displayName = badgeName.trim() || languageDic.metadataPreview.name;
   const displayDescription =
     description.trim() || languageDic.metadataPreview.description;
-  const textSize = getTextSize(displayText);
+  const maxLineLength = Math.max(...textLines.map((line) => line.length));
+  const textSize = getTextSize(maxLineLength, textLines.length);
   const Icon = selectedIcon?.Icon ?? null;
   const iconSize = 96;
   const iconY = 190;
   const textY = Icon ? 340 : 300;
+  const textLineHeight = Math.round(textSize * 1.15);
+  const textBlockHeight = textLineHeight * textLines.length;
+  const textStartY = textY - (textBlockHeight - textLineHeight) / 2;
 
   const badgeConfig = useMemo<BadgeConfig>(
     () => ({
@@ -176,7 +213,7 @@ export default function BuilderPage() {
       selectedIcon.id,
       selectedShapeId,
       selectedTheme.id,
-    ]
+    ],
   );
 
   const metadataPreview = useMemo(
@@ -185,9 +222,9 @@ export default function BuilderPage() {
         displayName,
         badgeConfig,
         "<image_cid>",
-        displayDescription
+        displayDescription,
       ),
-    [badgeConfig, displayDescription, displayName]
+    [badgeConfig, displayDescription, displayName],
   );
 
   const metadataJson = JSON.stringify(metadataPreview, null, 2);
@@ -221,9 +258,11 @@ export default function BuilderPage() {
       }
 
       setSaveStatus("success");
+      toast.success(languageDic.saveStatus.success);
     } catch (error) {
       console.error(error);
       setSaveStatus("error");
+      toast.error(languageDic.saveStatus.error);
     }
   };
 
@@ -244,6 +283,14 @@ export default function BuilderPage() {
 
   return (
     <div className="space-y-10">
+      {saveStatus === "saving" ? (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm">
+          <div className="flex items-center gap-3 rounded-2xl border border-slate-200/40 bg-white/90 px-5 py-3 text-sm font-semibold text-slate-800 shadow-lg shadow-slate-900/10 dark:border-cyan-300/30 dark:bg-slate-900/90 dark:text-slate-100">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <span>{languageDic.saveStatus.saving}</span>
+          </div>
+        </div>
+      ) : null}
       <AlertDialog open={showConnectAlert} onOpenChange={setShowConnectAlert}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -462,7 +509,7 @@ export default function BuilderPage() {
                 </label>
                 <input
                   className="mt-2 w-full rounded-2xl border border-slate-900/10 bg-white px-4 py-3 text-sm text-slate-800 focus:border-slate-900/40 focus:outline-none"
-                  maxLength={10}
+                  maxLength={MAX_BADGE_TEXT_LENGTH}
                   onChange={(event) => setBadgeText(event.target.value)}
                   placeholder={languageDic.textPlaceholder}
                   type="text"
@@ -550,9 +597,17 @@ export default function BuilderPage() {
                   fontWeight={700}
                   textAnchor="middle"
                   x={256}
-                  y={textY}
+                  y={textStartY}
                 >
-                  {displayText}
+                  {textLines.map((line, index) => (
+                    <tspan
+                      dy={index === 0 ? 0 : textLineHeight}
+                      key={`${line}-${index}`}
+                      x={256}
+                    >
+                      {line}
+                    </tspan>
+                  ))}
                 </text>
               </svg>
             </div>

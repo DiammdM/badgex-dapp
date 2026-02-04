@@ -96,10 +96,37 @@ const escapeXml = (value: string) =>
     .replace(/\"/g, "&quot;")
     .replace(/'/g, "&apos;");
 
-const getTextSize = (text: string) => {
-  const length = text.length;
-  if (length > 8) return 32;
-  if (length > 5) return 40;
+const MAX_BADGE_TEXT_LENGTH = 20;
+const WRAP_TEXT_AT = 10;
+
+const splitBadgeText = (text: string) => {
+  const normalized = text.trim().replace(/\s+/g, " ");
+  if (!normalized) return [];
+  const limited = normalized.slice(0, MAX_BADGE_TEXT_LENGTH);
+
+  if (/\s/.test(limited)) {
+    const words = limited.split(" ").filter(Boolean);
+    if (words.length >= 2) {
+      const splitIndex =
+        words.length === 2 ? 1 : words.length === 3 ? 2 : Math.ceil(words.length / 2);
+      const lineOne = words.slice(0, splitIndex).join(" ");
+      const lineTwo = words.slice(splitIndex).join(" ");
+      if (lineTwo) return [lineOne, lineTwo];
+    }
+  }
+
+  if (limited.length <= WRAP_TEXT_AT) return [limited];
+  return [limited.slice(0, WRAP_TEXT_AT), limited.slice(WRAP_TEXT_AT)];
+};
+
+const getTextSize = (maxLineLength: number, lineCount: number) => {
+  if (lineCount > 1) {
+    if (maxLineLength > 8) return 28;
+    if (maxLineLength > 5) return 32;
+    return 36;
+  }
+  if (maxLineLength > 8) return 32;
+  if (maxLineLength > 5) return 40;
   return 48;
 };
 
@@ -140,8 +167,14 @@ export const buildBadgeSvg = (config: BadgeConfig) => {
   const textValue = config[BadgePropertyNames.Text];
   const theme = THEME_PRESETS[themeId] ?? THEME_PRESETS.seafoam;
   const borderWidth = borderId === "none" ? 0 : borderId === "bold" ? 12 : 6;
-  const text = escapeXml((textValue || "BADGE").trim().slice(0, 10));
-  const textSize = getTextSize(text);
+  const rawText = (textValue || "BADGE").trim();
+  const limitedText = rawText.slice(0, MAX_BADGE_TEXT_LENGTH);
+  const rawTextLines = splitBadgeText(limitedText);
+  const textLines =
+    rawTextLines.length > 0 ? rawTextLines : ["BADGE"];
+  const maxLineLength = Math.max(...textLines.map((line) => line.length));
+  const textSize = getTextSize(maxLineLength, textLines.length);
+  const textLineHeight = Math.round(textSize * 1.15);
   const iconSize = 96;
   const iconCenterY = 190;
   const iconMarkup = buildIconMarkup(
@@ -152,6 +185,8 @@ export const buildBadgeSvg = (config: BadgeConfig) => {
     iconSize
   );
   const textY = iconMarkup ? 340 : 300;
+  const textBlockHeight = textLineHeight * textLines.length;
+  const textStartY = textY - (textBlockHeight - textLineHeight) / 2;
   const hexagonPoints = buildHexagonPoints(256, 256, 200);
   const borderColor = borderWidth ? theme.border : "none";
 
@@ -161,6 +196,14 @@ export const buildBadgeSvg = (config: BadgeConfig) => {
       : shapeId === "shield"
       ? `<path d=\"M256 58 L428 122 V252 C428 354 354 430 256 468 C158 430 84 354 84 252 V122 Z\" fill=\"url(#badgeFill)\" stroke=\"${borderColor}\" stroke-width=\"${borderWidth}\" />`
       : `<polygon points=\"${hexagonPoints}\" fill=\"url(#badgeFill)\" stroke=\"${borderColor}\" stroke-width=\"${borderWidth}\" />`;
+
+  const textMarkup = textLines
+    .map((line, index) => {
+      const safeLine = escapeXml(line);
+      const dy = index === 0 ? 0 : textLineHeight;
+      return `    <tspan x=\"256\" dy=\"${dy}\">${safeLine}</tspan>`;
+    })
+    .join("\n");
 
   return `
 <svg xmlns=\"http://www.w3.org/2000/svg\" width=\"${PREVIEW_SIZE}\" height=\"${PREVIEW_SIZE}\" viewBox=\"0 0 ${PREVIEW_SIZE} ${PREVIEW_SIZE}\">
@@ -172,8 +215,8 @@ export const buildBadgeSvg = (config: BadgeConfig) => {
   </defs>
   ${shapeMarkup}
   ${iconMarkup}
-  <text fill=\"${theme.text}\" font-family=\"Helvetica Neue, Arial, sans-serif\" font-size=\"${textSize}\" font-weight=\"700\" text-anchor=\"middle\" x=\"256\" y=\"${textY}\">
-    ${text}
+  <text fill=\"${theme.text}\" font-family=\"Helvetica Neue, Arial, sans-serif\" font-size=\"${textSize}\" font-weight=\"700\" text-anchor=\"middle\" x=\"256\" y=\"${textStartY}\">
+${textMarkup}
   </text>
 </svg>`.trim();
 };

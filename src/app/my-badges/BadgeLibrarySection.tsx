@@ -152,8 +152,8 @@ export function BadgeLibrarySection({
               className="flex flex-col gap-4 rounded-[24px] border border-slate-900/10 bg-white p-5 shadow-sm border-bright"
               key={badge.id}
             >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex min-w-0 items-center gap-4">
                   <div className="relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-amber-200 via-amber-100 to-emerald-100 text-xs font-semibold text-slate-700">
                     {badge.imageUrl ? (
                       <Image
@@ -173,9 +173,9 @@ export function BadgeLibrarySection({
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex shrink-0 items-center gap-2">
                   <span
-                    className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                    className={`whitespace-nowrap rounded-full px-3 py-1 text-xs font-semibold ${
                       statusStyles[badge.status]
                     }`}
                   >
